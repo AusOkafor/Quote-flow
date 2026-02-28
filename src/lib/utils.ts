@@ -69,7 +69,7 @@ export function calcTotals(
 export function quotePublicUrl(shareToken: string): string {
   const base = typeof window !== 'undefined'
     ? window.location.origin
-    : (import.meta.env.VITE_APP_URL ?? 'http://localhost:5173');
+    : (import.meta.env.VITE_APP_URL ?? 'https://quote-flow-phi.vercel.app');
   return `${base}/q/${shareToken}`;
 }
 
