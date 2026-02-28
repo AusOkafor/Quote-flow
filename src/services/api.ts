@@ -4,7 +4,7 @@ import type {
   DashboardStats, Profile, Quote, QuoteWithDetails, SendQuoteRequest,
 } from '@/types';
 
-const BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? 'http://localhost:8080';
+const BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? 'https://quote-service-p3fq.onrender.com';
 
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const token = await getAccessToken();
