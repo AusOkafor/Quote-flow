@@ -14,7 +14,7 @@ import type { Quote, SendChannel } from '@/types';
 export default function QuotesPage() {
   const navigate = useNavigate();
   const toast    = useAppToast();
-  const { quotes, duplicate, remove, reload } = useQuotes();
+  const { quotes, loading, error, duplicate, remove, reload } = useQuotes();
   const { profile } = useProfile();
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [preview, setPreview] = useState<Quote | null>(null);
@@ -83,6 +83,14 @@ export default function QuotesPage() {
         }
       />
       <div className="page-body">
+        {error && (
+          <div style={{ padding: 16, marginBottom: 16, background: 'rgba(232,64,64,.08)', border: '1px solid var(--danger)', borderRadius: 10, color: 'var(--danger)' }}>
+            ⚠️ {error} — Check browser console (F12) and ensure Vercel has <code>VITE_API_BASE_URL</code> and Render has <code>ALLOWED_ORIGINS</code>.
+          </div>
+        )}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>Loading quotes…</div>
+        ) : (
         <QuotesTable
           quotes={quotes}
           onPreview={async (id) => {
@@ -100,6 +108,7 @@ export default function QuotesPage() {
           onSend={id => setSendId(id)}
           onEdit={id => navigate(`/app/create?edit=${id}`)}
         />
+        )}
       </div>
       <QuotePreviewModal
         quote={preview}

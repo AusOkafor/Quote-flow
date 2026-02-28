@@ -16,7 +16,11 @@ export function formatCurrency(amount: number, currency: Currency = 'JMD'): stri
 
 export function relativeTime(iso: string): string {
   const d = new Date(iso);
-  const diffDays = Math.floor((Date.now() - d.getTime()) / 86_400_000);
+  const now = new Date();
+  // Compare calendar days in user's local timezone (not elapsed UTC time)
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const quoteDayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((todayStart.getTime() - quoteDayStart.getTime()) / 86_400_000);
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays}d ago`;

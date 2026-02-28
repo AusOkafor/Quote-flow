@@ -9,7 +9,7 @@ import type { Client }  from '@/types';
 
 export default function ClientsPage() {
   const toast = useAppToast();
-  const { clients, create, delete: deleteClient } = useClients();
+  const { clients, loading, error, create, delete: deleteClient } = useClients();
   const [showAdd, setShowAdd] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -44,7 +44,14 @@ export default function ClientsPage() {
         actions={<button className="btn btn-dark" onClick={() => setShowAdd(true)}>+ Add Client</button>}
       />
       <div className="page-body">
-        {clients.length === 0 ? (
+        {error && (
+          <div style={{ padding: 16, marginBottom: 16, background: 'rgba(232,64,64,.08)', border: '1px solid var(--danger)', borderRadius: 10, color: 'var(--danger)' }}>
+            ⚠️ {error} — Check browser console (F12) and ensure Vercel has <code>VITE_API_BASE_URL</code> and Render has <code>ALLOWED_ORIGINS</code>.
+          </div>
+        )}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 72, color: 'var(--muted)' }}>Loading clients…</div>
+        ) : clients.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 72, color: 'var(--muted)' }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>👥</div>
             <div style={{ fontFamily: 'Syne', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>No clients yet</div>

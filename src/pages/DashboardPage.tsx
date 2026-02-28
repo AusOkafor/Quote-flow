@@ -17,8 +17,8 @@ export default function DashboardPage() {
   const toast    = useAppToast();
   const { profile }      = useProfile();
   const [currency, setCurrency] = useState<string | null>(null);
-  const { stats }        = useDashboard(currency === 'all' || currency === null ? undefined : currency);
-  const { quotes }       = useQuotes();
+  const { stats, loading: statsLoading, error: statsError } = useDashboard(currency === 'all' || currency === null ? undefined : currency);
+  const { quotes, error: quotesError } = useQuotes();
   const [preview, setPreview] = useState<Quote | null>(null);
 
   // Resolve default tab: when we have stats, set currency if not yet set
@@ -63,6 +63,11 @@ export default function DashboardPage() {
         }
       />
       <div className="page-body">
+        {(statsError || quotesError) && (
+          <div style={{ padding: 16, marginBottom: 16, background: 'rgba(232,64,64,.08)', border: '1px solid var(--danger)', borderRadius: 10, color: 'var(--danger)' }}>
+            ⚠️ {statsError ?? quotesError} — Check browser console (F12). Ensure Vercel has <code>VITE_API_BASE_URL</code> and Render has <code>ALLOWED_ORIGINS</code>.
+          </div>
+        )}
         {showTabs && (
           <div className="tab-bar" style={{ marginBottom: 20 }}>
             <button
