@@ -311,7 +311,7 @@ textarea { resize: vertical; min-height: 88px; }
 .qp-meta { text-align: right; }
 .qp-num  { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; color: var(--quote-accent, var(--accent)); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
 .qp-dates { font-size: 12px; color: var(--muted); line-height: 1.7; }
-.qp-title { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 30px; }
+.qp-title { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 30px; word-wrap: break-word; overflow-wrap: break-word; }
 .qp-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--cream); border-radius: 12px; padding: 22px; margin-bottom: 30px; border-left: 4px solid var(--quote-accent, var(--accent)); }
 .qp-party-lbl  { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 7px; }
 .qp-party-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
@@ -476,17 +476,17 @@ textarea { resize: vertical; min-height: 88px; }
   .plans-hero h2 { font-size: 28px; }
   .plans-cards { grid-template-columns: 1fr; padding: 0 20px 40px; gap: 16px; }
   .public-viewer { padding: 20px 12px; }
-  .qp-wrap { padding: 24px 20px; }
+  .qp-wrap { padding: 24px 20px; overflow-x: hidden; }
   .qp-top { flex-direction: column; gap: 16px; align-items: flex-start; }
   .qp-meta { text-align: left; }
-  .qp-title { font-size: 24px; }
-  .qp-parties { grid-template-columns: 1fr; }
+  .qp-title { font-size: 22px; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; }
+  .qp-parties { grid-template-columns: 1fr; padding: 18px; }
   .qp-foot { flex-direction: column; align-items: stretch; gap: 16px; }
   .qp-table { display: block; }
   .qp-table thead { display: none; }
   .qp-table tbody tr { display: block; border-bottom: 1px solid var(--cream); padding: 12px 0; }
-  .qp-table td { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
-  .qp-table td::before { content: attr(data-label); font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; margin-right: 12px; }
+  .qp-table td { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: baseline; padding: 8px 0; font-size: 13px; }
+  .qp-table td::before { content: attr(data-label); font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
   .qp-totals { justify-content: stretch; }
   .qp-tot-inner { width: 100%; }
   .login-card { margin: 20px; padding: 32px 24px; }

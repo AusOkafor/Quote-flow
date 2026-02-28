@@ -48,6 +48,7 @@ export default function QuotesPage() {
     const result = await quotesApi.send(id, { channel, recipient_email: extra?.email, recipient_phone: extra?.phone });
     const msg = channel === 'link' ? '✅ Link copied to clipboard!' : `✅ Sent via ${channel}`;
     toast(msg, 'success', 6000);
+    await reload();
     return result;
   };
 
