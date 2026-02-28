@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const toast    = useAppToast();
   const { profile }      = useProfile();
   const [currency, setCurrency] = useState<string | null>(null);
-  const { stats, loading: statsLoading, error: statsError } = useDashboard(currency === 'all' || currency === null ? undefined : currency);
+  const { stats, error: statsError } = useDashboard(currency === 'all' || currency === null ? undefined : currency);
   const { quotes, error: quotesError } = useQuotes();
   const [preview, setPreview] = useState<Quote | null>(null);
 
