@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import ToastProvider   from '@/components/layout/ToastProvider';
 import AppShell        from '@/components/layout/AppShell';
 import LandingPage     from '@/pages/LandingPage';
 import LoginPage       from '@/pages/LoginPage';
@@ -28,6 +29,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <ToastProvider>
       <Routes>
         <Route path="/"         element={<LandingPage />} />
         <Route path="/login"    element={<LoginPage />} />
@@ -42,6 +44,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </ToastProvider>
     </BrowserRouter>
   );
 }

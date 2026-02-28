@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicApi } from '@/services/api';
+import { useAppToast } from '@/components/layout/ToastProvider';
 import { formatCurrency, formatDateLong } from '@/lib/utils';
 import type { QuoteWithDetails } from '@/types';
 
 export default function PublicQuotePage() {
   const { token } = useParams<{ token: string }>();
+  const toast = useAppToast();
   const [quote,    setQuote]    = useState<QuoteWithDetails | null>(null);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState('');
@@ -32,7 +34,21 @@ export default function PublicQuotePage() {
       await publicApi.acceptQuote(token, signatureName.trim() || undefined);
       setAccepted(true);
       if (quote) setQuote({ ...quote, status: 'accepted', accepted_by_name: signatureName.trim() || quote.accepted_by_name });
+      toast('🎉 Quote accepted! The freelancer has been notified.', 'success', 5000);
     } catch {
+      // Network/timeout/CORS can cause fetch to fail even when the backend succeeded (e.g. Render cold start).
+      // Refetch the quote to see if it was actually accepted.
+      try {
+        const updated = await publicApi.getQuote(token);
+        if (updated.status === 'accepted') {
+          setAccepted(true);
+          setQuote(updated);
+          toast('🎉 Quote accepted! The freelancer has been notified.', 'success', 5000);
+          return;
+        }
+      } catch {
+        /* ignore refetch errors */
+      }
       alert('Could not accept quote. It may have already been accepted or expired.');
     } finally {
       setAccepting(false);
@@ -105,10 +121,10 @@ export default function PublicQuotePage() {
               <tbody>
                 {items.map((item, i) => (
                   <tr key={i}>
-                    <td className="td-main">{item.description}</td>
-                    <td style={{ textAlign: 'right' }}>{item.quantity}</td>
-                    <td style={{ textAlign: 'right' }}>{formatCurrency(item.unit_price, quote.currency)}</td>
-                    <td style={{ textAlign: 'right' }}>{formatCurrency(item.total, quote.currency)}</td>
+                    <td className="td-main" data-label="Description">{item.description}</td>
+                    <td style={{ textAlign: 'right' }} data-label="Qty">{item.quantity}</td>
+                    <td style={{ textAlign: 'right' }} data-label="Unit Price">{formatCurrency(item.unit_price, quote.currency)}</td>
+                    <td style={{ textAlign: 'right' }} data-label="Total">{formatCurrency(item.total, quote.currency)}</td>
                   </tr>
                 ))}
               </tbody>

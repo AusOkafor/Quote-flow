@@ -8,7 +8,7 @@ import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useQuotes }      from '@/hooks/useQuotes';
 import { useProfile }     from '@/hooks/useProfile';
 import { quotesApi, isFreeTierLimitError } from '@/services/api';
-import { useAppToast }    from '@/components/layout/AppShell';
+import { useAppToast }    from '@/components/layout/ToastProvider';
 import type { Quote, SendChannel } from '@/types';
 
 export default function QuotesPage() {

@@ -6,7 +6,7 @@ import LineItemsEditor    from '@/components/quotes/LineItemsEditor';
 import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useClients }     from '@/hooks/useClients';
 import { quotesApi, isFreeTierLimitError } from '@/services/api';
-import { useAppToast }    from '@/components/layout/AppShell';
+import { useAppToast }    from '@/components/layout/ToastProvider';
 import { calcTotals }     from '@/lib/utils';
 import type { LineItemInput, Currency } from '@/types';
 

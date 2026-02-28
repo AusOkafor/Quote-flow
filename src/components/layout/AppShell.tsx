@@ -1,17 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import ToastContainer from '@/components/ui/Toast';
-import { useToast } from '@/hooks/useToast';
 import { useProfile } from '@/hooks/useProfile';
 import { useDashboard } from '@/hooks/useDashboard';
 import { supabase } from '@/lib/supabase';
 import { getInitials, getAvatarColor } from '@/lib/utils';
-
-const ToastCtx = createContext<ReturnType<typeof useToast>['toast']>(() => {});
-
-export function useAppToast() {
-  return useContext(ToastCtx);
-}
 
 const FREE_LIMIT = 3;
 
@@ -26,8 +18,8 @@ const NAV_ITEMS = [
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const { toasts, toast, dismiss } = useToast();
   const { profile } = useProfile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { stats } = useDashboard();
   const [userName, setUserName] = useState<string>('');
 
@@ -47,18 +39,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const quotesUsed = stats?.quotes_created_this_month ?? 0;
   const planLabel = plan === 'pro' ? 'Pro' : `Free Plan — ${quotesUsed}/${FREE_LIMIT} quotes`;
 
+  const closeSidebar = () => setSidebarOpen(false);
+  const navTo = (path: string) => { navigate(path); closeSidebar(); };
+
   return (
-    <ToastCtx.Provider value={toast}>
-      <div className="app-shell">
+    <div className="app-shell">
+        <div className={`sidebar-backdrop ${sidebarOpen ? 'open' : ''}`} onClick={closeSidebar} aria-hidden />
+        <div className="mobile-header">
+          <div className="logo">Quote<span>Flow</span></div>
+          <button className="hamburger" onClick={() => setSidebarOpen(true)} aria-label="Open menu">☰</button>
+        </div>
         {/* Sidebar */}
-        <aside className="sidebar">
+        <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="sidebar-logo">Quote<span>Flow</span></div>
           <div className="nav-label">Main</div>
           {NAV_ITEMS.map(item => (
             <div
               key={item.path}
               className={`nav-item${location.pathname === item.path ? ' active' : ''}`}
-              onClick={() => navigate(item.path)}
+              onClick={() => navTo(item.path)}
             >
               <span className="nav-icon">{item.icon}</span>
               {item.label}
@@ -67,7 +66,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div
             className="nav-item"
             style={{ marginTop: 8 }}
-            onClick={() => navigate('/pricing')}
+            onClick={() => navTo('/pricing')}
           >
             <span className="nav-icon">💎</span> Upgrade
           </div>
@@ -99,7 +98,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div
               className="nav-item"
               style={{ color: 'rgba(245,242,236,.4)' }}
-              onClick={handleLogout}
+              onClick={() => { handleLogout(); closeSidebar(); }}
             >
               <span className="nav-icon">→</span> Log out
             </div>
@@ -111,8 +110,5 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-
-      <ToastContainer toasts={toasts} dismiss={dismiss} />
-    </ToastCtx.Provider>
   );
 }

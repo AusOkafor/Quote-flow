@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Modal from '@/components/ui/Modal';
 import { userApi } from '@/services/api';
 import { supabase } from '@/lib/supabase';
-import { useAppToast } from '@/components/layout/AppShell';
+import { useAppToast } from '@/components/layout/ToastProvider';
 
 export default function AccountPanel() {
   const navigate = useNavigate();

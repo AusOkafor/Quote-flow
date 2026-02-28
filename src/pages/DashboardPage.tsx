@@ -8,7 +8,7 @@ import QuotePreviewModal from '@/components/quotes/QuotePreviewModal';
 import { useDashboard }  from '@/hooks/useDashboard';
 import { useProfile }    from '@/hooks/useProfile';
 import { useQuotes }     from '@/hooks/useQuotes';
-import { useAppToast }   from '@/components/layout/AppShell';
+import { useAppToast }   from '@/components/layout/ToastProvider';
 import { formatCurrency } from '@/lib/utils';
 import type { Quote, Currency } from '@/types';
 

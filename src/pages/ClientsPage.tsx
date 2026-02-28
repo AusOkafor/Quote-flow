@@ -4,7 +4,7 @@ import ClientCard       from '@/components/clients/ClientCard';
 import AddClientModal   from '@/components/modals/AddClientModal';
 import DeleteClientModal from '@/components/modals/DeleteClientModal';
 import { useClients }   from '@/hooks/useClients';
-import { useAppToast }  from '@/components/layout/AppShell';
+import { useAppToast }  from '@/components/layout/ToastProvider';
 import type { Client }  from '@/types';
 
 export default function ClientsPage() {

@@ -7,7 +7,7 @@ import TaxPanel         from '@/components/settings/TaxPanel';
 import BillingPanel     from '@/components/settings/BillingPanel';
 import AccountPanel     from '@/components/settings/AccountPanel';
 import { useProfile }   from '@/hooks/useProfile';
-import { useAppToast }  from '@/components/layout/AppShell';
+import { useAppToast }  from '@/components/layout/ToastProvider';
 import type { Profile } from '@/types';
 
 const NAV = [
