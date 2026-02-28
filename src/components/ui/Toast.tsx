@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ToastItem } from '@/hooks/useToast';
 
 const ICONS = { success: '✅', info: 'ℹ️', warning: '⚠️', default: '💬' };

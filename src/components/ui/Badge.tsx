@@ -1,4 +1,3 @@
-import React from 'react';
 import { badgeClass } from '@/lib/utils';
 import type { QuoteStatus } from '@/types';
 

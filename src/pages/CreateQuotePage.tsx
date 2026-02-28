@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Topbar             from '@/components/layout/Topbar';
 import Toggle             from '@/components/ui/Toggle';
 import LineItemsEditor    from '@/components/quotes/LineItemsEditor';
 import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useClients }     from '@/hooks/useClients';
-import { useProfile }     from '@/hooks/useProfile';
 import { quotesApi, isFreeTierLimitError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/AppShell';
 import { calcTotals }     from '@/lib/utils';
@@ -34,7 +33,6 @@ export default function CreateQuotePage() {
   const navigate  = useNavigate();
   const toast     = useAppToast();
   const { clients }  = useClients();
-  const { profile }  = useProfile();
 
   const [step, setStep]           = useState(1);
   const [loading, setLoading]     = useState(false);
@@ -51,7 +49,7 @@ export default function CreateQuotePage() {
   const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
     setForm(prev => ({ ...prev, [key]: val }));
 
-  const { subtotal, taxAmount, total } = calcTotals(items, form.tax_rate, form.tax_exempt);
+  const { subtotal, total } = calcTotals(items, form.tax_rate, form.tax_exempt);
 
   const client = clients.find(c => c.id === form.client_id);
 
@@ -91,7 +89,7 @@ export default function CreateQuotePage() {
               const n = i + 1;
               const state = n < step ? 's-done' : n === step ? 's-active' : 's-pending';
               return (
-                <React.Fragment key={label}>
+                <Fragment key={label}>
                   <div className="step-item">
                     <div className={`step-circle ${state}`}>{n < step ? '✓' : n}</div>
                     <div className="step-text">
@@ -99,7 +97,7 @@ export default function CreateQuotePage() {
                     </div>
                   </div>
                   {i < STEPS.length - 1 && <div className={`step-line${n < step ? ' done' : ''}`} />}
-                </React.Fragment>
+                </Fragment>
               );
             })}
           </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Profile, Currency } from '@/types';
 
 interface Props {

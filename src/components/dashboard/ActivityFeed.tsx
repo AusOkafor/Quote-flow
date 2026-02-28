@@ -1,4 +1,3 @@
-import React from 'react';
 import { relativeTime } from '@/lib/utils';
 import type { ActivityItem } from '@/types';
 

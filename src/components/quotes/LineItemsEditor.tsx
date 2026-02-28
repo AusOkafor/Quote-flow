@@ -1,4 +1,3 @@
-import React from 'react';
 import { formatCurrency, calcTotals } from '@/lib/utils';
 import type { LineItemInput, Currency } from '@/types';
 

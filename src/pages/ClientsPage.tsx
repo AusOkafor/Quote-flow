@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Topbar           from '@/components/layout/Topbar';
 import ClientCard       from '@/components/clients/ClientCard';
 import AddClientModal   from '@/components/modals/AddClientModal';

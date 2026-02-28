@@ -1,4 +1,3 @@
-import React from 'react';
 import Toggle from '@/components/ui/Toggle';
 import type { Profile } from '@/types';
 

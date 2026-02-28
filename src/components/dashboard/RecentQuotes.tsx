@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency, relativeTime } from '@/lib/utils';
