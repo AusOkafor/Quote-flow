@@ -31,6 +31,11 @@ export function formatDateLong(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+/** Format for expiry banners: "Jan 15" */
+export function formatDateShort(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 const BADGE_CLASSES: Record<QuoteStatus, string> = {
   accepted: 'badge badge-accepted',
   sent:     'badge badge-sent',

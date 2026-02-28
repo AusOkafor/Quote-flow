@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
-import { formatCurrency, formatDateLong } from '@/lib/utils';
+import { formatCurrency, formatDateLong, formatDateShort } from '@/lib/utils';
 import type { QuoteWithDetails } from '@/types';
 
 export default function PublicQuotePage() {
@@ -62,6 +62,55 @@ export default function PublicQuotePage() {
   const items = quote.line_items ?? [];
   const accent = quote.creator?.brand_color || 'var(--accent)';
 
+  // Expiry countdown
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiresDate = new Date(quote.expires_at);
+  expiresDate.setHours(0, 0, 0, 0);
+  const daysRemaining = Math.ceil((expiresDate.getTime() - today.getTime()) / 86_400_000);
+  const isExpired = daysRemaining < 0;
+  const businessName = quote.creator?.business_name || 'the vendor';
+
+  const expiryBanner = () => {
+    const expDate = formatDateShort(quote.expires_at);
+    if (daysRemaining > 7) {
+      return (
+        <div className="expiry-banner expiry-neutral">
+          Valid for {quote.validity_days} days · Expires {expDate}
+        </div>
+      );
+    }
+    if (daysRemaining >= 3 && daysRemaining <= 7) {
+      return (
+        <div className="expiry-banner expiry-amber">
+          ⏱ Expires in {daysRemaining} days — {expDate}
+        </div>
+      );
+    }
+    if (daysRemaining === 1 || daysRemaining === 2) {
+      return (
+        <div className="expiry-banner expiry-red">
+          ⚠ Expires {daysRemaining === 1 ? 'tomorrow' : `in ${daysRemaining} days`} — accept today
+        </div>
+      );
+    }
+    if (daysRemaining === 0) {
+      return (
+        <div className="expiry-banner expiry-red">
+          ⚠ Expires today — accept now
+        </div>
+      );
+    }
+    if (isExpired) {
+      return (
+        <div className="expiry-banner expiry-expired">
+          Expired on {formatDateShort(quote.expires_at)}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="public-viewer">
       {accepted && (
@@ -90,6 +139,8 @@ export default function PublicQuotePage() {
           </div>
 
           <div className="qp-title">{quote.title}</div>
+
+          {expiryBanner()}
 
           <div className="qp-parties">
             <div>
@@ -148,7 +199,7 @@ export default function PublicQuotePage() {
 
           <div className="qp-foot">
             <div className="qp-valid">Valid for {quote.validity_days} days</div>
-            {!accepted && quote.status !== 'accepted' && (
+            {!accepted && quote.status !== 'accepted' && !isExpired && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
                 {quote.require_signature && (
                   <div style={{ width: '100%', maxWidth: 320 }}>
@@ -177,6 +228,11 @@ export default function PublicQuotePage() {
                 >
                   {accepting ? 'Accepting…' : '✓ Accept this Quote'}
                 </button>
+              </div>
+            )}
+            {isExpired && !accepted && quote.status !== 'accepted' && (
+              <div className="expiry-expired-box">
+                This quote expired on {formatDateLong(quote.expires_at)}. Contact {businessName} for a refreshed quote.
               </div>
             )}
             {(accepted || quote.status === 'accepted') && (
