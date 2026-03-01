@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
+import { useDataRefresh } from '@/contexts/DataRefreshContext';
 import { teamsApi } from '@/services/api';
 import type { Team } from '@/types';
 
 export default function TeamSyncBanner() {
   const { profile, refresh } = useProfile();
+  const { invalidate } = useDataRefresh() ?? {};
   const [invitedTeams, setInvitedTeams] = useState<Team[]>([]);
   const [syncing, setSyncing] = useState(false);
 
@@ -27,6 +29,7 @@ export default function TeamSyncBanner() {
     try {
       await teamsApi.syncTeam(teamToSync.id);
       await refresh();
+      invalidate?.();
     } catch {
       /* error handled by caller if needed */
     } finally {

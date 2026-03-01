@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { clientsApi } from '@/services/api';
+import { useDataRefresh } from '@/contexts/DataRefreshContext';
 import type { Client, CreateClientRequest } from '@/types';
 
 export function useClients() {
+  const { refreshTrigger = 0 } = useDataRefresh() ?? {};
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -19,7 +21,7 @@ export function useClients() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); }, [load, refreshTrigger]);
 
   const create = async (data: CreateClientRequest): Promise<Client> => {
     const c = await clientsApi.create(data);

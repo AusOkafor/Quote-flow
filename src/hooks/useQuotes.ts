@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { quotesApi } from '@/services/api';
+import { useDataRefresh } from '@/contexts/DataRefreshContext';
 import type { Quote } from '@/types';
 
 export function useQuotes(statusFilter?: string) {
+  const { refreshTrigger = 0 } = useDataRefresh() ?? {};
   const [quotes, setQuotes]   = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
@@ -19,7 +21,7 @@ export function useQuotes(statusFilter?: string) {
     }
   }, [statusFilter]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); }, [load, refreshTrigger]);
 
   const duplicate = async (id: string): Promise<Quote> => {
     const newQ = await quotesApi.duplicate(id);

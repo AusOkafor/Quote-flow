@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import ToastProvider   from '@/components/layout/ToastProvider';
+import { DataRefreshProvider } from '@/contexts/DataRefreshContext';
 import AppShell        from '@/components/layout/AppShell';
 import LandingPage     from '@/pages/LandingPage';
 import LoginPage       from '@/pages/LoginPage';
@@ -36,12 +37,12 @@ export default function App() {
         <Route path="/pricing"  element={<PricingPage />} />
         <Route path="/q/:token" element={<PublicQuotePage />} />
 
-        <Route path="/app" element={<AuthGuard><AppShell><DashboardPage /></AppShell></AuthGuard>} />
-        <Route path="/app/quotes"        element={<AuthGuard><AppShell><QuotesPage /></AppShell></AuthGuard>} />
-        <Route path="/app/quotes/:id/edit" element={<AuthGuard><AppShell><CreateQuotePage /></AppShell></AuthGuard>} />
-        <Route path="/app/create"        element={<AuthGuard><AppShell><CreateQuotePage /></AppShell></AuthGuard>} />
-        <Route path="/app/clients"  element={<AuthGuard><AppShell><ClientsPage /></AppShell></AuthGuard>} />
-        <Route path="/app/settings" element={<AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>} />
+        <Route path="/app" element={<AuthGuard><DataRefreshProvider><AppShell><DashboardPage /></AppShell></DataRefreshProvider></AuthGuard>} />
+        <Route path="/app/quotes"        element={<AuthGuard><DataRefreshProvider><AppShell><QuotesPage /></AppShell></DataRefreshProvider></AuthGuard>} />
+        <Route path="/app/quotes/:id/edit" element={<AuthGuard><DataRefreshProvider><AppShell><CreateQuotePage /></AppShell></DataRefreshProvider></AuthGuard>} />
+        <Route path="/app/create"        element={<AuthGuard><DataRefreshProvider><AppShell><CreateQuotePage /></AppShell></DataRefreshProvider></AuthGuard>} />
+        <Route path="/app/clients"  element={<AuthGuard><DataRefreshProvider><AppShell><ClientsPage /></AppShell></DataRefreshProvider></AuthGuard>} />
+        <Route path="/app/settings" element={<AuthGuard><DataRefreshProvider><AppShell><SettingsPage /></AppShell></DataRefreshProvider></AuthGuard>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
