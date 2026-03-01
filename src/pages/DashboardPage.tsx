@@ -9,7 +9,6 @@ import { useDashboard }  from '@/hooks/useDashboard';
 import { useProfile }    from '@/hooks/useProfile';
 import { useQuotes }     from '@/hooks/useQuotes';
 import { useAppToast }   from '@/components/layout/ToastProvider';
-import { dashboardApi }    from '@/services/api';
 import { formatCurrency } from '@/lib/utils';
 import type { Quote, Currency } from '@/types';
 
@@ -21,35 +20,6 @@ export default function DashboardPage() {
   const { stats, error: statsError } = useDashboard(currency === 'all' || currency === null ? undefined : currency);
   const { quotes, reload: reloadQuotes, error: quotesError } = useQuotes();
   const [preview, setPreview] = useState<Quote | null>(null);
-
-  // Toast for unread client messages (dedupe via sessionStorage, poll every 30s)
-  useEffect(() => {
-    const key = 'qf_notified_quote_ids';
-    const check = () => {
-      let notified: string[] = [];
-      try {
-        const raw = sessionStorage.getItem(key);
-        if (raw) notified = JSON.parse(raw) as string[];
-      } catch { /* ignore */ }
-      dashboardApi.getUnreadMessages()
-        .then(msgs => {
-          for (const m of msgs) {
-            if (notified.includes(m.quote_id)) continue;
-            const label = m.note_type === 'change_request' ? 'Requested changes' : 'New message';
-            const from = m.author_name || m.client_name || 'Client';
-            toast(`${label} from ${from} on #${m.quote_number}: "${m.message.slice(0, 60)}${m.message.length > 60 ? '…' : ''}"`, 'info', 5000);
-            notified.push(m.quote_id);
-          }
-          if (msgs.length > 0) {
-            try { sessionStorage.setItem(key, JSON.stringify(notified)); } catch { /* ignore */ }
-          }
-        })
-        .catch(() => { /* ignore */ });
-    };
-    check();
-    const t = setInterval(check, 30_000);
-    return () => clearInterval(t);
-  }, [toast]);
 
   // Resolve default tab: when we have stats, set currency if not yet set
   useEffect(() => {
@@ -88,6 +58,7 @@ export default function DashboardPage() {
         actions={
           <>
             {displayCurrency && <span style={{ fontSize: 13, color: 'var(--muted)' }}>{displayCurrency}</span>}
+            <button className="btn btn-secondary" onClick={() => toast('Test notification — toast system works!', 'info', 4000)} style={{ marginRight: 8 }} title="Verify toast notifications work">🔔 Test</button>
             <button className="btn btn-dark" onClick={() => navigate('/app/create')}>+ New Quote</button>
           </>
         }

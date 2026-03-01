@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfile';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useAppToast } from '@/components/layout/ToastProvider';
+import { dashboardApi } from '@/services/api';
 import { supabase } from '@/lib/supabase';
 import { getInitials, getAvatarColor } from '@/lib/utils';
 
@@ -18,10 +20,41 @@ const NAV_ITEMS = [
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const navigate  = useNavigate();
   const location  = useLocation();
+  const toast     = useAppToast();
   const { profile } = useProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { stats } = useDashboard();
   const [userName, setUserName] = useState<string>('');
+
+  // Toast for unread client messages (runs on all app pages, poll every 30s)
+  useEffect(() => {
+    const key = 'qf_notified_quote_ids';
+    const check = () => {
+      let notified: string[] = [];
+      try {
+        const raw = sessionStorage.getItem(key);
+        if (raw) notified = JSON.parse(raw) as string[];
+      } catch { /* ignore */ }
+      dashboardApi.getUnreadMessages()
+        .then(msgs => {
+          const list = Array.isArray(msgs) ? msgs : [];
+          for (const m of list) {
+            if (notified.includes(m.quote_id)) continue;
+            const label = m.note_type === 'change_request' ? 'Requested changes' : 'New message';
+            const from = m.author_name || m.client_name || 'Client';
+            toast(`${label} from ${from} on #${m.quote_number}: "${m.message.slice(0, 60)}${m.message.length > 60 ? '…' : ''}"`, 'info', 5000);
+            notified.push(m.quote_id);
+          }
+          if (list.length > 0) {
+            try { sessionStorage.setItem(key, JSON.stringify(notified)); } catch { /* ignore */ }
+          }
+        })
+        .catch((e) => { console.warn('[QuoteFlow] Unread messages fetch failed:', e); });
+    };
+    check();
+    const t = setInterval(check, 30_000);
+    return () => clearInterval(t);
+  }, [toast]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
