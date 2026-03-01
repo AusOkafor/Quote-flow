@@ -2,6 +2,7 @@ import { getAccessToken } from '@/lib/supabase';
 import type {
   APIResponse, Client, CreateClientRequest, CreateQuoteRequest,
   DashboardStats, Profile, Quote, QuoteWithDetails, SendQuoteRequest,
+  UnreadClientMessage,
 } from '@/types';
 
 const BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? 'https://quote-service-p3fq.onrender.com';
@@ -41,6 +42,7 @@ const patch = <T>(p: string, b: unknown) => req<T>(p, { method: 'PATCH', body: J
 export const dashboardApi = {
   getStats: (currency?: string) =>
     get<DashboardStats>(`/dashboard${currency ? `?currency=${encodeURIComponent(currency)}` : ''}`),
+  getUnreadMessages: () => get<UnreadClientMessage[]>('/dashboard/unread-messages'),
 };
 
 export const profileApi = {

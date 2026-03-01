@@ -169,6 +169,16 @@ export interface ActivityItem {
   occurred_at: string;
 }
 
+export interface UnreadClientMessage {
+  quote_id: string;
+  quote_number: string;
+  client_name: string;
+  author_name: string;
+  message: string;
+  note_type: 'message' | 'change_request';
+  created_at: string;
+}
+
 export interface DashboardStats {
   total_quoted_this_month: number;
   total_quoted_last_month: number;
