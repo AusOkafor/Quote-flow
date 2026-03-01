@@ -25,5 +25,5 @@ export function useProfile() {
     return updated;
   };
 
-  return { profile, loading, save };
+  return { profile, loading, save, refresh: load };
 }

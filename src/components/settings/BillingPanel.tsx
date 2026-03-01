@@ -1,14 +1,48 @@
+import { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useDashboard } from '@/hooks/useDashboard';
+import { billingApi } from '@/services/api';
+import { useAppToast } from '@/components/layout/ToastProvider';
 
 const FREE_LIMIT = 3;
 
 export default function BillingPanel() {
-  const { profile } = useProfile();
+  const toast = useAppToast();
+  const { profile, refresh: refreshProfile } = useProfile();
   const { stats } = useDashboard();
+  const [loading, setLoading] = useState<string | null>(null);
 
   const plan = profile?.plan ?? 'free';
   const quotesUsed = stats?.quotes_created_this_month ?? 0;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      toast('Payment successful! Your plan has been updated.', 'success');
+      params.delete('success');
+      const newUrl = params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      refreshProfile?.();
+    }
+  }, [toast, refreshProfile]);
+
+  const handleUpgrade = async (targetPlan: 'pro' | 'business', interval: 'monthly' | 'annual') => {
+    setLoading(`${targetPlan}-${interval}`);
+    try {
+      const { url } = await billingApi.createCheckoutSession({ plan: targetPlan, interval });
+      if (url) window.location.href = url;
+      else toast('Could not start checkout', 'warning');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Checkout failed';
+      if (msg.includes('not configured') || msg.includes('503')) {
+        toast('Billing is not configured yet. Contact support to upgrade.', 'warning');
+      } else {
+        toast(msg, 'warning');
+      }
+    } finally {
+      setLoading(null);
+    }
+  };
 
   return (
     <>
@@ -48,9 +82,24 @@ export default function BillingPanel() {
               ? 'Unlimited quotes, custom branding, view tracking, and more.'
               : 'Team members, API access, custom domain, white-label quotes.'}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            Payment integration coming soon. In the meantime,{' '}
-            <a href="mailto:support@quoteflow.app" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>contact us</a> to upgrade.
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+            <button
+              className="btn btn-dark"
+              disabled={!!loading}
+              onClick={() => void handleUpgrade(plan === 'free' ? 'pro' : 'business', 'monthly')}
+            >
+              {loading === (plan === 'free' ? 'pro' : 'business') + '-monthly' ? 'Redirecting…' : 'Upgrade Monthly'}
+            </button>
+            <button
+              className="btn btn-outline"
+              disabled={!!loading}
+              onClick={() => void handleUpgrade(plan === 'free' ? 'pro' : 'business', 'annual')}
+            >
+              {loading === (plan === 'free' ? 'pro' : 'business') + '-annual' ? 'Redirecting…' : 'Upgrade Annual (save 20%)'}
+            </button>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 12 }}>
+            Secure payment via Stripe. Cancel anytime.
           </div>
         </div>
       )}

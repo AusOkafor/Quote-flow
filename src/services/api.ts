@@ -65,6 +65,11 @@ export const apiKeysApi = {
   revoke:  (id: string) => del<{ deleted: boolean }>(`/api-keys/${id}`),
 };
 
+export const billingApi = {
+  createCheckoutSession: (data: { plan: string; interval: string }) =>
+    post<{ url: string }>('/billing/create-checkout-session', data),
+};
+
 export const userApi = {
   deleteAccount: () => del<{ deleted: boolean }>('/user'),
 };
