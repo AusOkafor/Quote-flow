@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const { profile }      = useProfile();
   const [currency, setCurrency] = useState<string | null>(null);
   const { stats, error: statsError } = useDashboard(currency === 'all' || currency === null ? undefined : currency);
-  const { quotes, error: quotesError } = useQuotes();
+  const { quotes, reload: reloadQuotes, error: quotesError } = useQuotes();
   const [preview, setPreview] = useState<Quote | null>(null);
 
   // Resolve default tab: when we have stats, set currency if not yet set
@@ -125,6 +125,7 @@ export default function DashboardPage() {
         quote={preview}
         open={!!preview}
         onClose={() => setPreview(null)}
+        onNotesRead={() => void reloadQuotes()}
         toast={toast}
         profile={profile ?? undefined}
       />

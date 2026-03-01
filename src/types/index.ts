@@ -99,6 +99,17 @@ export interface Quote {
   updated_at: string;
   client?: Client;
   line_items?: LineItem[];
+  has_unread_notes?: boolean;
+}
+
+export interface QuoteNote {
+  id: string;
+  quote_id: string;
+  author_type: 'client' | 'freelancer';
+  author_name: string;
+  message: string;
+  read_at?: string | null;
+  created_at: string;
 }
 
 export interface QuoteWithDetails extends Quote {

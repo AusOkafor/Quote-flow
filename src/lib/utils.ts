@@ -36,6 +36,11 @@ export function formatDateShort(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** Format for notes: "Jan 15, 2:30 PM" */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
 const BADGE_CLASSES: Record<QuoteStatus, string> = {
   accepted: 'badge badge-accepted',
   sent:     'badge badge-sent',

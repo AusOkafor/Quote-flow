@@ -97,7 +97,25 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
               </tr>
             ) : filtered.map(q => (
               <tr key={q.id} onClick={() => onPreview(q.id)}>
-                <td><span className="qt-num">{q.quote_number}</span></td>
+                <td>
+                  <span className="qt-num" style={{ position: 'relative' }}>
+                    {q.quote_number}
+                    {q.has_unread_notes && (
+                      <span
+                        title="Unread client message"
+                        style={{
+                          position: 'absolute',
+                          top: -2,
+                          right: -8,
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: 'var(--danger)',
+                        }}
+                      />
+                    )}
+                  </span>
+                </td>
                 <td style={{ fontWeight: 500 }}>{q.client?.name ?? '—'}</td>
                 <td style={{ color: 'var(--muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.title}</td>
                 <td><Badge status={q.status} paid={!!q.paid_at} /></td>

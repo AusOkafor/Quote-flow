@@ -74,6 +74,11 @@ export const quotesApi = {
   markPaid:  (id: string) => post<QuoteWithDetails>(`/quotes/${id}/mark-paid`, {}),
   send:      (id: string, data: SendQuoteRequest) =>
     post<{ message: string; quote_link: string; channel: string }>(`/quotes/${id}/send`, data),
+  getNotes:  (id: string) => get<import('@/types').QuoteNote[]>(`/quotes/${id}/notes`),
+  postNote:  (id: string, data: { message: string }) =>
+    post<import('@/types').QuoteNote>(`/quotes/${id}/notes`, data),
+  markNotesRead: (id: string) =>
+    req<{ read: boolean }>(`/quotes/${id}/notes/read`, { method: 'PATCH' }),
   exportCSV: async (): Promise<void> => {
     const token = await getAccessToken();
     const res = await fetch(`${BASE}/quotes/export`, {
@@ -103,4 +108,7 @@ export const publicApi = {
       `/q/${token}/accept`,
       { method: 'POST', body: JSON.stringify({ signature_name: signatureName }) },
     ),
+  getNotes:    (token: string) => req<import('@/types').QuoteNote[]>(`/q/${token}/notes`),
+  postNote:    (token: string, data: { name: string; message: string }) =>
+    post<import('@/types').QuoteNote>(`/q/${token}/notes`, data),
 };

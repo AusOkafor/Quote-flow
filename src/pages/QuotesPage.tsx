@@ -118,6 +118,7 @@ export default function QuotesPage() {
         onClose={() => { setPreviewId(null); setPreview(null); }}
         onSend={id => { setSendQuote(preview); setSendId(id); setPreviewId(null); setPreview(null); }}
         onMarkPaid={id => void handleMarkPaid(id)}
+        onNotesRead={() => void reload()}
         toast={toast}
         profile={profile ?? undefined}
       />

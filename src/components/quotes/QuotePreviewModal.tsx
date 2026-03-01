@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { formatCurrency, formatDateLong, quotePublicUrl, copyToClipboard } from '@/lib/utils';
-import type { Quote } from '@/types';
+import { quotesApi } from '@/services/api';
+import { formatCurrency, formatDateLong, formatDateTime, quotePublicUrl, copyToClipboard } from '@/lib/utils';
+import type { Quote, QuoteNote } from '@/types';
 
 interface Props {
   quote: Quote | null;
@@ -9,13 +10,43 @@ interface Props {
   onClose: () => void;
   onSend?: (id: string) => void;
   onMarkPaid?: (id: string) => void;
+  onNotesRead?: () => void;
   toast?: (msg: string, type?: 'success' | 'info' | 'warning' | 'default') => void;
   loading?: boolean;
   /** Profile for logo/business name/brand color (in-app preview) */
   profile?: { logo_url?: string | null; business_name?: string; brand_color?: string };
 }
 
-export default function QuotePreviewModal({ quote, open, onClose, onSend, onMarkPaid, toast, loading, profile }: Props) {
+export default function QuotePreviewModal({ quote, open, onClose, onSend, onMarkPaid, onNotesRead, toast, loading, profile }: Props) {
+  const [notes, setNotes] = useState<QuoteNote[]>([]);
+  const [replyMsg, setReplyMsg] = useState('');
+  const [postingReply, setPostingReply] = useState(false);
+  useEffect(() => {
+    if (!open || !quote?.id) return;
+    quotesApi.getNotes(quote.id).then(setNotes).catch(() => {});
+    quotesApi.markNotesRead(quote.id).then(() => onNotesRead?.()).catch(() => {});
+  }, [open, quote?.id, onNotesRead]);
+
+  const loadNotes = () => {
+    if (!quote?.id) return;
+    quotesApi.getNotes(quote.id).then(setNotes).catch(() => {});
+  };
+
+  const handleReply = async () => {
+    if (!quote?.id || !replyMsg.trim()) return;
+    setPostingReply(true);
+    try {
+      await quotesApi.postNote(quote.id, { message: replyMsg.trim() });
+      setReplyMsg('');
+      loadNotes();
+      toast?.('Reply sent.', 'success');
+    } catch {
+      toast?.('Could not send reply.', 'warning');
+    } finally {
+      setPostingReply(false);
+    }
+  };
+
   if (!open) return null;
   if (loading || !quote) {
     return (
@@ -128,6 +159,55 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
             <p>{quote.notes}</p>
           </div>
         )}
+
+        {/* Notes thread */}
+        <div className="qp-notes" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+          <div className="qp-notes-lbl">Questions & Notes</div>
+          {notes.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              {notes.map(n => (
+                <div
+                  key={n.id}
+                  style={{
+                    padding: '8px 10px',
+                    marginBottom: 6,
+                    borderRadius: 8,
+                    background: n.author_type === 'client' ? 'rgba(0,0,0,.04)' : 'rgba(var(--accent-rgb, 47, 125, 232), 0.08)',
+                    borderLeft: `3px solid ${n.author_type === 'client' ? 'var(--muted)' : accent}`,
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 2, color: 'var(--text)' }}>
+                    {n.author_name} · {formatDateTime(n.created_at)}
+                  </div>
+                  <div style={{ fontSize: 13, lineHeight: 1.4 }}>{n.message}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <textarea
+              placeholder="Reply to client…"
+              value={replyMsg}
+              onChange={e => setReplyMsg(e.target.value)}
+              rows={2}
+              style={{
+                flex: 1,
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                fontSize: 13,
+                resize: 'vertical',
+              }}
+            />
+            <button
+              className="btn btn-dark btn-sm"
+              onClick={() => void handleReply()}
+              disabled={postingReply || !replyMsg.trim()}
+            >
+              {postingReply ? '…' : 'Reply'}
+            </button>
+          </div>
+        </div>
 
         {/* Footer */}
         <div className="qp-foot">

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
-import { formatCurrency, formatDateLong, formatDateShort } from '@/lib/utils';
-import type { QuoteWithDetails } from '@/types';
+import { formatCurrency, formatDateLong, formatDateShort, formatDateTime } from '@/lib/utils';
+import type { QuoteWithDetails, QuoteNote } from '@/types';
 
 export default function PublicQuotePage() {
   const { token } = useParams<{ token: string }>();
@@ -14,14 +14,46 @@ export default function PublicQuotePage() {
   const [accepted, setAccepted] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [signatureName, setSignatureName] = useState('');
+  const [notes,    setNotes]    = useState<QuoteNote[]>([]);
+  const [noteName,  setNoteName] = useState('');
+  const [noteMsg,   setNoteMsg]  = useState('');
+  const [postingNote, setPostingNote] = useState(false);
 
   useEffect(() => {
     if (!token) return;
     publicApi.getQuote(token)
-      .then(setQuote)
+      .then(q => {
+        setQuote(q);
+        setNoteName(q.client?.name ?? '');
+      })
       .catch(() => setError('This quote link is invalid or has expired.'))
       .finally(() => setLoading(false));
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !quote) return;
+    publicApi.getNotes(token).then(setNotes).catch(() => {});
+  }, [token, quote]);
+
+  const loadNotes = () => {
+    if (!token) return;
+    publicApi.getNotes(token).then(setNotes).catch(() => {});
+  };
+
+  const handlePostNote = async () => {
+    if (!token || !noteMsg.trim() || !noteName.trim()) return;
+    setPostingNote(true);
+    try {
+      await publicApi.postNote(token, { name: noteName.trim(), message: noteMsg.trim() });
+      setNoteMsg('');
+      loadNotes();
+      toast('Message sent. The freelancer will be notified.', 'success');
+    } catch {
+      toast('Could not send message. Please try again.', 'warning');
+    } finally {
+      setPostingNote(false);
+    }
+  };
 
   const handleAccept = async () => {
     if (!token) return;
@@ -243,6 +275,67 @@ export default function PublicQuotePage() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Notes thread */}
+          <div className="qp-notes" style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+            <div className="qp-notes-lbl">Questions & Notes</div>
+            {notes.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                {notes.map(n => (
+                  <div
+                    key={n.id}
+                    style={{
+                      padding: '10px 12px',
+                      marginBottom: 8,
+                      borderRadius: 8,
+                      background: n.author_type === 'client' ? 'rgba(0,0,0,.04)' : 'rgba(var(--accent-rgb, 47, 125, 232), 0.08)',
+                      borderLeft: `3px solid ${n.author_type === 'client' ? 'var(--muted)' : accent}`,
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--text)' }}>
+                      {n.author_name} · {formatDateTime(n.created_at)}
+                    </div>
+                    <div style={{ fontSize: 14, lineHeight: 1.5 }}>{n.message}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <input
+                type="text"
+                placeholder="Your name"
+                value={noteName}
+                onChange={e => setNoteName(e.target.value)}
+                style={{
+                  padding: 10,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  fontSize: 14,
+                }}
+              />
+              <textarea
+                placeholder="Ask a question or add a note…"
+                value={noteMsg}
+                onChange={e => setNoteMsg(e.target.value)}
+                rows={3}
+                style={{
+                  padding: 10,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  fontSize: 14,
+                  resize: 'vertical',
+                }}
+              />
+              <button
+                className="btn btn-dark"
+                onClick={() => void handlePostNote()}
+                disabled={postingNote || !noteName.trim() || !noteMsg.trim()}
+                style={{ alignSelf: 'flex-end' }}
+              >
+                {postingNote ? 'Sending…' : 'Send Message'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
