@@ -9,6 +9,22 @@ export interface User {
   created_at: string;
 }
 
+export interface Team {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamMember {
+  id: string;
+  team_id: string;
+  user_id: string;
+  role: 'owner' | 'admin' | 'member';
+  created_at: string;
+  email?: string;
+}
+
 export interface Profile {
   id: string;
   user_id: string;
@@ -116,7 +132,7 @@ export interface QuoteNote {
 export interface QuoteWithDetails extends Quote {
   client: Client;
   line_items: LineItem[];
-  creator?: { logo_url?: string | null; business_name?: string; brand_color?: string };
+  creator?: { logo_url?: string | null; business_name?: string; brand_color?: string; white_label?: boolean };
 }
 
 export interface LineItemInput {
@@ -232,4 +248,19 @@ export interface APIResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+export interface APIKey {
+  id: string;
+  user_id: string;
+  name: string;
+  last_used_at?: string | null;
+  created_at: string;
+}
+
+export interface CreateAPIKeyResponse {
+  id: string;
+  name: string;
+  key: string;  // raw key — only shown once
+  created_at: string;
 }

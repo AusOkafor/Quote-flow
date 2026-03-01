@@ -1,8 +1,8 @@
 import { getAccessToken } from '@/lib/supabase';
 import type {
-  APIResponse, Client, CreateClientRequest, CreateQuoteRequest,
+  APIResponse, APIKey, Client, CreateClientRequest, CreateQuoteRequest,
   DashboardStats, Profile, Quote, QuoteWithDetails, SendQuoteRequest,
-  UnreadClientMessage,
+  UnreadClientMessage, Team, TeamMember,
 } from '@/types';
 
 const BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? 'https://quote-service-p3fq.onrender.com';
@@ -48,6 +48,21 @@ export const dashboardApi = {
 export const profileApi = {
   get:    () => get<Profile>('/profile'),
   update: (data: Partial<Profile>) => put<Profile>('/profile', data),
+};
+
+export const teamsApi = {
+  getMyTeam:      () => get<Team | null>('/teams'),
+  listMembers:    (teamId: string) => get<TeamMember[]>(`/teams/${teamId}/members`),
+  addMember:      (teamId: string, data: { email: string; role?: string }) =>
+    post<TeamMember[]>(`/teams/${teamId}/members`, data),
+  removeMember:   (teamId: string, userId: string) =>
+    del<{ deleted: boolean }>(`/teams/${teamId}/members/${userId}`),
+};
+
+export const apiKeysApi = {
+  list:    () => get<APIKey[]>('/api-keys'),
+  create:  (data: { name: string }) => post<import('@/types').CreateAPIKeyResponse>('/api-keys', data),
+  revoke:  (id: string) => del<{ deleted: boolean }>(`/api-keys/${id}`),
 };
 
 export const userApi = {
@@ -113,6 +128,11 @@ export const templatesApi = {
 /** Check if an error is the free tier limit (402). */
 export function isFreeTierLimitError(e: unknown): boolean {
   return e instanceof Error && (e as Error & { code?: string }).code === 'free_tier_limit';
+}
+
+/** Check if an error is Pro plan required (402). */
+export function isProRequiredError(e: unknown): boolean {
+  return e instanceof Error && (e as Error & { code?: string }).code === 'pro_required';
 }
 
 export const publicApi = {

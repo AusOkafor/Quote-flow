@@ -5,10 +5,13 @@ import ProfilePanel     from '@/components/settings/ProfilePanel';
 import DefaultsPanel    from '@/components/settings/DefaultsPanel';
 import TaxPanel         from '@/components/settings/TaxPanel';
 import BillingPanel     from '@/components/settings/BillingPanel';
+import TeamsPanel       from '@/components/settings/TeamsPanel';
+import ApiKeysPanel     from '@/components/settings/ApiKeysPanel';
 import TemplatesPanel   from '@/components/settings/TemplatesPanel';
 import AccountPanel     from '@/components/settings/AccountPanel';
 import { useProfile }   from '@/hooks/useProfile';
 import { useAppToast }  from '@/components/layout/ToastProvider';
+import { isProRequiredError } from '@/services/api';
 import type { Profile } from '@/types';
 
 const NAV = [
@@ -17,6 +20,8 @@ const NAV = [
   { id: 'templates', icon: '📄', label: 'Templates' },
   { id: 'tax',       icon: '🧾', label: 'Tax Settings' },
   { id: 'billing',   icon: '💳', label: 'Billing' },
+  { id: 'team',      icon: '👥', label: 'Team' },
+  { id: 'api',       icon: '🔑', label: 'API' },
   { id: 'account',   icon: '⚠️', label: 'Account' },
 ];
 
@@ -38,7 +43,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const p = searchParams.get('panel');
-    if (p && ['profile', 'defaults', 'templates', 'tax', 'billing', 'account'].includes(p)) {
+    if (p && ['profile', 'defaults', 'templates', 'tax', 'billing', 'team', 'api', 'account'].includes(p)) {
       setPanel(p);
     }
   }, [searchParams]);
@@ -55,8 +60,12 @@ export default function SettingsPage() {
       await save(toSave);
       setLocal(null);
       toast('✅ Settings saved!', 'success');
-    } catch {
-      toast('Failed to save settings', 'warning');
+    } catch (e) {
+      if (isProRequiredError(e)) {
+        toast('Custom branding requires Pro. Upgrade to unlock.', 'warning');
+      } else {
+        toast('Failed to save settings', 'warning');
+      }
     } finally {
       setSaving(false);
     }
@@ -87,6 +96,8 @@ export default function SettingsPage() {
             {panel === 'templates' && <TemplatesPanel onError={msg => toast(msg, 'warning')} />}
             {panel === 'tax'       && <TaxPanel      profile={profile} onChange={onChange} />}
             {panel === 'billing'  && <BillingPanel />}
+            {panel === 'team'     && <TeamsPanel onError={msg => toast(msg, 'warning')} />}
+            {panel === 'api'      && <ApiKeysPanel onError={msg => toast(msg, 'warning')} />}
             {panel === 'account'  && <AccountPanel />}
           </div>
         </div>

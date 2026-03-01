@@ -59,6 +59,8 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
   };
 
   const handleRemoveLogo = () => onChange({ logo_url: null });
+  const isPro = profile.plan === 'pro' || profile.plan === 'business';
+
   return (
     <>
       <div className="sp-title">Profile & Brand</div>
@@ -93,13 +95,17 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
       <div className="sp-section">
         <div className="sp-section-title">Brand Color</div>
         <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>Used as accent on your quotes.</div>
-        <div className="color-swatches">
+        {!isPro && (
+          <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 8, fontWeight: 500 }}>Pro feature — Upgrade to customize</div>
+        )}
+        <div className="color-swatches" style={{ opacity: isPro ? 1 : 0.6, pointerEvents: isPro ? 'auto' : 'none' }}>
           {BRAND_COLORS.map(c => (
             <div
               key={c}
               className={`swatch${profile.brand_color === c ? ' active' : ''}`}
               style={{ background: c }}
-              onClick={() => onChange({ brand_color: c })}
+              onClick={() => isPro && onChange({ brand_color: c })}
+              title={!isPro ? 'Upgrade to Pro to customize' : undefined}
             />
           ))}
         </div>
@@ -107,6 +113,9 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
 
       <div className="sp-section">
         <div className="sp-section-title">Logo</div>
+        {!isPro && (
+          <div style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 8, fontWeight: 500 }}>Pro feature — Upgrade to add your logo</div>
+        )}
         <input
           ref={inputRef}
           type="file"
@@ -115,21 +124,29 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
           style={{ display: 'none' }}
         />
         {profile.logo_url ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, opacity: isPro ? 1 : 0.6 }}>
             <img src={profile.logo_url} alt="Logo" style={{ maxHeight: 64, maxWidth: 160, objectFit: 'contain' }} />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="btn btn-outline btn-sm" onClick={handleLogoClick} disabled={uploading}>
+              <button type="button" className="btn btn-outline btn-sm" onClick={handleLogoClick} disabled={uploading || !isPro}>
                 {uploading ? 'Uploading…' : 'Replace'}
               </button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={handleRemoveLogo} style={{ color: 'var(--danger)' }}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => isPro && handleRemoveLogo()} style={{ color: 'var(--danger)' }} disabled={!isPro}>
                 Remove
               </button>
             </div>
           </div>
         ) : (
-          <div className="logo-upload" onClick={handleLogoClick} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleLogoClick()}>
+          <div
+            className="logo-upload"
+            onClick={() => isPro && handleLogoClick()}
+            role="button"
+            tabIndex={isPro ? 0 : -1}
+            onKeyDown={e => isPro && e.key === 'Enter' && handleLogoClick()}
+            style={{ opacity: isPro ? 1 : 0.6, cursor: isPro ? 'pointer' : 'not-allowed' }}
+            title={!isPro ? 'Upgrade to Pro to add your logo' : undefined}
+          >
             <div style={{ fontSize: 28, marginBottom: 8 }}>🖼</div>
-            <div style={{ fontSize: 13, color: 'var(--muted)' }}>{uploading ? 'Uploading…' : 'Click to upload logo'}</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>{uploading ? 'Uploading…' : (isPro ? 'Click to upload logo' : 'Pro feature — Upgrade to add logo')}</div>
             <div style={{ fontSize: 11, color: 'rgba(138,130,120,.6)', marginTop: 4 }}>PNG, SVG, or JPG — max 2MB</div>
           </div>
         )}

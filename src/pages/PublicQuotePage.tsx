@@ -181,10 +181,14 @@ export default function PublicQuotePage() {
             <div>
               {quote.creator?.logo_url ? (
                 <img src={quote.creator.logo_url} alt="" style={{ maxHeight: 48, maxWidth: 140, objectFit: 'contain', marginBottom: 8 }} />
+              ) : quote.creator?.white_label ? (
+                <div className="qp-brand" style={{ fontSize: 22, fontWeight: 700 }}>{quote.creator?.business_name || 'Professional Quote'}</div>
               ) : (
                 <div className="qp-brand">Quote<span className="qp-accent">Flow</span></div>
               )}
-              <div className="qp-biz">{quote.creator?.business_name || 'Professional Quote'}</div>
+              {(quote.creator?.logo_url || !quote.creator?.white_label) && (
+                <div className="qp-biz">{quote.creator?.business_name || 'Professional Quote'}</div>
+              )}
             </div>
             <div className="qp-meta">
               <div className="qp-num">{quote.quote_number}</div>

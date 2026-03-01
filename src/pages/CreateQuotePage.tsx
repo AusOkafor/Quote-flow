@@ -5,7 +5,8 @@ import Toggle             from '@/components/ui/Toggle';
 import LineItemsEditor    from '@/components/quotes/LineItemsEditor';
 import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useClients }     from '@/hooks/useClients';
-import { quotesApi, templatesApi, isFreeTierLimitError } from '@/services/api';
+import { useProfile }     from '@/hooks/useProfile';
+import { quotesApi, templatesApi, isFreeTierLimitError, isProRequiredError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
 import { calcTotals, copyToClipboard } from '@/lib/utils';
 import type { LineItemInput, Currency, QuoteTemplate, QuoteWithDetails } from '@/types';
@@ -34,12 +35,14 @@ export default function CreateQuotePage() {
   const { id: editId } = useParams<{ id: string }>();
   const toast     = useAppToast();
   const { clients }  = useClients();
+  const { profile }  = useProfile();
   const isEdit = !!editId;
+  const isPro = profile?.plan === 'pro' || profile?.plan === 'business';
 
   const [step, setStep]           = useState(1);
   const [loading, setLoading]     = useState(false);
   const [loadingQuote, setLoadingQuote] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<'limit' | 'pro' | null>(null);
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [items, setItems]         = useState<LineItemInput[]>([{ description: '', quantity: 1, unit_price: 0 }]);
   const [savedQuote, setSavedQuote] = useState<QuoteWithDetails | null>(null);
@@ -57,6 +60,10 @@ export default function CreateQuotePage() {
   useEffect(() => {
     templatesApi.list().then(setTemplates).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (profile && !isPro && form.track_views) setForm(prev => ({ ...prev, track_views: false }));
+  }, [profile?.plan]);
 
   useEffect(() => {
     if (!editId) return;
@@ -154,7 +161,9 @@ export default function CreateQuotePage() {
       }
     } catch (e) {
       if (isFreeTierLimitError(e)) {
-        setShowUpgradeModal(true);
+        setShowUpgradeModal('limit');
+      } else if (isProRequiredError(e)) {
+        setShowUpgradeModal('pro');
       } else {
         toast(e instanceof Error ? e.message : 'Failed to save quote', 'warning');
       }
@@ -340,17 +349,21 @@ export default function CreateQuotePage() {
               </div>
               <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { key: 'tax_exempt'         as const, label: 'GCT Exempt',          sub: 'No tax applied to this quote' },
-                  { key: 'require_signature'  as const, label: 'Require Signature',    sub: 'Client must sign to accept' },
-                  { key: 'track_views'        as const, label: 'Track Views',          sub: 'Get notified when client opens' },
-                  { key: 'send_reminder'      as const, label: 'Send Reminder',        sub: 'Auto-remind 3 days before expiry' },
+                  { key: 'tax_exempt'         as const, label: 'GCT Exempt',          sub: 'No tax applied to this quote', pro: false },
+                  { key: 'require_signature'  as const, label: 'Require Signature',    sub: 'Client must sign to accept', pro: false },
+                  { key: 'track_views'        as const, label: 'Track Views',          sub: isPro ? 'Get notified when client opens' : 'Pro feature — Upgrade to enable', pro: true },
+                  { key: 'send_reminder'      as const, label: 'Send Reminder',        sub: 'Auto-remind 3 days before expiry', pro: false },
                 ].map(item => (
                   <div key={item.key} className="toggle-row">
                     <div>
                       <div className="toggle-label">{item.label}</div>
                       <div className="toggle-sub">{item.sub}</div>
                     </div>
-                    <Toggle checked={!!form[item.key]} onChange={v => set(item.key, v as FormState[typeof item.key])} />
+                    <Toggle
+                      checked={!!form[item.key]}
+                      onChange={v => set(item.key, v as FormState[typeof item.key])}
+                      disabled={item.pro && !isPro}
+                    />
                   </div>
                 ))}
               </div>
@@ -389,7 +402,7 @@ export default function CreateQuotePage() {
           )}
         </div>
       </div>
-      <UpgradeLimitModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+      <UpgradeLimitModal open={!!showUpgradeModal} onClose={() => setShowUpgradeModal(null)} variant={showUpgradeModal ?? 'limit'} />
     </>
   );
 }
