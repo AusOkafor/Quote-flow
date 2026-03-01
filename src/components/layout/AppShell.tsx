@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfile';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useAppToast } from '@/components/layout/ToastProvider';
+import TeamSyncBanner from '@/components/layout/TeamSyncBanner';
 import { dashboardApi } from '@/services/api';
 import { supabase } from '@/lib/supabase';
 import { getInitials, getAvatarColor } from '@/lib/utils';
@@ -140,6 +141,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Main area */}
         <main className="main">
+          <TeamSyncBanner />
           {children}
         </main>
       </div>

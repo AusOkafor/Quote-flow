@@ -52,6 +52,8 @@ export const profileApi = {
 
 export const teamsApi = {
   getMyTeam:      () => get<Team | null>('/teams'),
+  getInvited:     () => get<Team[]>('/teams/invited'),
+  syncTeam:       (teamId: string) => post<Team>(`/teams/${teamId}/sync`, {}),
   listMembers:    (teamId: string) => get<TeamMember[]>(`/teams/${teamId}/members`),
   addMember:      (teamId: string, data: { email: string; role?: string }) =>
     post<TeamMember[]>(`/teams/${teamId}/members`, data),

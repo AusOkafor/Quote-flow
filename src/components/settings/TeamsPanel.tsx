@@ -74,7 +74,7 @@ export default function TeamsPanel({ onError }: Props) {
   return (
     <>
       <div className="sp-title">Team</div>
-      <div className="sp-sub">Invite team members to collaborate on quotes and clients. Max 5 members.</div>
+      <div className="sp-sub">Add team members by email. They must sign up for QuoteFlow first — then add them here. Max 5 members.</div>
 
       {team && (
         <>

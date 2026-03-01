@@ -28,6 +28,7 @@ export interface TeamMember {
 export interface Profile {
   id: string;
   user_id: string;
+  team_id?: string | null;
   business_name: string;
   profession: string;
   address: string;
