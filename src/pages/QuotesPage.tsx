@@ -4,10 +4,11 @@ import Topbar             from '@/components/layout/Topbar';
 import QuotesTable        from '@/components/quotes/QuotesTable';
 import QuotePreviewModal  from '@/components/quotes/QuotePreviewModal';
 import SendModal          from '@/components/quotes/SendModal';
+import SaveAsTemplateModal from '@/components/modals/SaveAsTemplateModal';
 import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useQuotes }      from '@/hooks/useQuotes';
 import { useProfile }     from '@/hooks/useProfile';
-import { quotesApi, isFreeTierLimitError } from '@/services/api';
+import { quotesApi, templatesApi, isFreeTierLimitError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
 import type { Quote, SendChannel } from '@/types';
 
@@ -20,6 +21,7 @@ export default function QuotesPage() {
   const [preview, setPreview] = useState<Quote | null>(null);
   const [sendId,  setSendId]  = useState<string | null>(null);
   const [sendQuote, setSendQuote] = useState<Quote | null>(null);
+  const [saveAsTemplateId, setSaveAsTemplateId] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleDuplicate = async (id: string) => {
@@ -72,6 +74,12 @@ export default function QuotesPage() {
     }
   };
 
+  const handleSaveAsTemplate = async (name: string) => {
+    if (!saveAsTemplateId) return;
+    await templatesApi.createFromQuote({ name, quote_id: saveAsTemplateId });
+    toast('📄 Template saved!', 'success');
+  };
+
   return (
     <>
       <Topbar
@@ -108,6 +116,7 @@ export default function QuotesPage() {
           onDelete={id => void handleDelete(id)}
           onSend={id => setSendId(id)}
           onEdit={id => navigate(`/app/create?edit=${id}`)}
+          onSaveAsTemplate={id => setSaveAsTemplateId(id)}
         />
         )}
       </div>
@@ -128,6 +137,12 @@ export default function QuotesPage() {
         open={!!sendId}
         onClose={() => { setSendId(null); setSendQuote(null); }}
         onSend={(id, ch, extra) => handleSend(id, ch, extra)}
+      />
+      <SaveAsTemplateModal
+        open={!!saveAsTemplateId}
+        quoteTitle={quotes.find(q => q.id === saveAsTemplateId)?.title}
+        onClose={() => setSaveAsTemplateId(null)}
+        onSave={handleSaveAsTemplate}
       />
       <UpgradeLimitModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </>

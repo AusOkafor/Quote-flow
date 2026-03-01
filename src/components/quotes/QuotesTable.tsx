@@ -5,11 +5,12 @@ import type { Quote } from '@/types';
 
 interface Props {
   quotes: Quote[];
-  onPreview:   (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onDelete:    (id: string) => void;
-  onSend:      (id: string) => void;
-  onEdit:      (id: string) => void;
+  onPreview:       (id: string) => void;
+  onDuplicate:    (id: string) => void;
+  onDelete:       (id: string) => void;
+  onSend:         (id: string) => void;
+  onEdit:         (id: string) => void;
+  onSaveAsTemplate?: (id: string) => void;
 }
 
 const TABS = [
@@ -20,7 +21,7 @@ const TABS = [
   { label: 'Expired',  value: 'expired'  },
 ];
 
-export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, onSend, onEdit }: Props) {
+export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, onSend, onEdit, onSaveAsTemplate }: Props) {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [dotsId, setDotsId] = useState<string | null>(null);
@@ -51,11 +52,12 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
     setDotsId(prev => prev === id ? null : id);
   };
 
-  const dotActions = [
-    { icon: '👁',  label: 'View',           action: (id: string) => onPreview(id) },
+  const dotActions: { icon: string; label: string; action: (id: string) => void }[] = [
+    { icon: '👁',  label: 'View',             action: (id: string) => onPreview(id) },
     { icon: '✏️',  label: 'Edit',            action: (id: string) => onEdit(id) },
     { icon: '📋',  label: 'Duplicate',       action: (id: string) => onDuplicate(id) },
     { icon: '📤',  label: 'Send',            action: (id: string) => onSend(id) },
+    ...(onSaveAsTemplate ? [{ icon: '📄', label: 'Save as Template', action: onSaveAsTemplate }] : []),
   ];
 
   return (

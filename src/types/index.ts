@@ -186,6 +186,36 @@ export interface DashboardStats {
   recent_activity: ActivityItem[];
 }
 
+export interface QuoteTemplate {
+  id: string;
+  user_id: string;
+  name: string;
+  title: string;
+  currency: Currency;
+  validity_days: number;
+  notes: string;
+  deposit: string;
+  payment_method: string;
+  delivery_timeline: string;
+  revisions: string;
+  tax_exempt: boolean;
+  tax_rate: number;
+  require_signature: boolean;
+  track_views: boolean;
+  send_reminder: boolean;
+  created_at: string;
+  line_items?: TemplateLineItem[];
+}
+
+export interface TemplateLineItem {
+  id: string;
+  template_id: string;
+  position: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+}
+
 export interface APIResponse<T> {
   success: boolean;
   data?: T;

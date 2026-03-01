@@ -1,14 +1,14 @@
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Topbar             from '@/components/layout/Topbar';
 import Toggle             from '@/components/ui/Toggle';
 import LineItemsEditor    from '@/components/quotes/LineItemsEditor';
 import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useClients }     from '@/hooks/useClients';
-import { quotesApi, isFreeTierLimitError } from '@/services/api';
+import { quotesApi, templatesApi, isFreeTierLimitError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
 import { calcTotals }     from '@/lib/utils';
-import type { LineItemInput, Currency } from '@/types';
+import type { LineItemInput, Currency, QuoteTemplate } from '@/types';
 
 const STEPS = ['Client Info', 'Line Items', 'Terms & Notes', 'Review & Send'];
 
@@ -37,6 +37,7 @@ export default function CreateQuotePage() {
   const [step, setStep]           = useState(1);
   const [loading, setLoading]     = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [items, setItems]         = useState<LineItemInput[]>([{ description: '', quantity: 1, unit_price: 0 }]);
   const [form, setForm]       = useState<FormState>({
     client_id: '', title: '', currency: 'JMD',
@@ -48,6 +49,36 @@ export default function CreateQuotePage() {
 
   const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
     setForm(prev => ({ ...prev, [key]: val }));
+
+  useEffect(() => {
+    templatesApi.list().then(setTemplates).catch(() => {});
+  }, []);
+
+  const applyTemplate = (tpl: QuoteTemplate) => {
+    setForm(prev => ({
+      ...prev,
+      title: tpl.title || prev.title,
+      currency: tpl.currency as Currency,
+      validity_days: tpl.validity_days,
+      notes: tpl.notes,
+      deposit: tpl.deposit,
+      payment_method: tpl.payment_method,
+      delivery_timeline: tpl.delivery_timeline,
+      revisions: tpl.revisions,
+      tax_exempt: tpl.tax_exempt,
+      tax_rate: tpl.tax_rate,
+      require_signature: tpl.require_signature,
+      track_views: tpl.track_views,
+      send_reminder: tpl.send_reminder,
+    }));
+    if (tpl.line_items && tpl.line_items.length > 0) {
+      setItems(tpl.line_items.map(li => ({
+        description: li.description,
+        quantity: li.quantity,
+        unit_price: li.unit_price,
+      })));
+    }
+  };
 
   const { subtotal, total } = calcTotals(items, form.tax_rate, form.tax_exempt);
 
@@ -107,6 +138,23 @@ export default function CreateQuotePage() {
             <div className="flow-card">
               <div className="flow-title">Who is this quote for?</div>
               <div className="flow-sub">Select an existing client or enter details manually.</div>
+              {templates.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 8 }}>Start from Template</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {templates.map(t => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={() => applyTemplate(t)}
+                      >
+                        📄 {t.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="form-grid">
                 <div className="form-group form-full">
                   <label>Select Client</label>

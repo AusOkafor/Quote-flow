@@ -96,6 +96,15 @@ export const quotesApi = {
   },
 };
 
+export const templatesApi = {
+  list:   () => get<import('@/types').QuoteTemplate[]>('/templates'),
+  create: (data: { name: string; title?: string; currency: string; validity_days: number; notes?: string; deposit?: string; payment_method?: string; delivery_timeline?: string; revisions?: string; tax_exempt: boolean; tax_rate: number; require_signature: boolean; track_views: boolean; send_reminder: boolean; line_items: { description: string; quantity: number; unit_price: number }[] }) =>
+    post<import('@/types').QuoteTemplate>('/templates', data),
+  createFromQuote: (data: { name: string; quote_id: string }) =>
+    post<import('@/types').QuoteTemplate>('/templates/from-quote', data),
+  delete: (id: string) => del<{ deleted: boolean }>(`/templates/${id}`),
+};
+
 /** Check if an error is the free tier limit (402). */
 export function isFreeTierLimitError(e: unknown): boolean {
   return e instanceof Error && (e as Error & { code?: string }).code === 'free_tier_limit';

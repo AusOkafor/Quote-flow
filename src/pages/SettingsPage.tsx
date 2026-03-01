@@ -5,17 +5,19 @@ import ProfilePanel     from '@/components/settings/ProfilePanel';
 import DefaultsPanel    from '@/components/settings/DefaultsPanel';
 import TaxPanel         from '@/components/settings/TaxPanel';
 import BillingPanel     from '@/components/settings/BillingPanel';
+import TemplatesPanel   from '@/components/settings/TemplatesPanel';
 import AccountPanel     from '@/components/settings/AccountPanel';
 import { useProfile }   from '@/hooks/useProfile';
 import { useAppToast }  from '@/components/layout/ToastProvider';
 import type { Profile } from '@/types';
 
 const NAV = [
-  { id: 'profile',  icon: '👤', label: 'Profile & Brand' },
-  { id: 'defaults', icon: '📋', label: 'Quote Defaults' },
-  { id: 'tax',      icon: '🧾', label: 'Tax Settings' },
-  { id: 'billing',  icon: '💳', label: 'Billing' },
-  { id: 'account',  icon: '⚠️', label: 'Account' },
+  { id: 'profile',   icon: '👤', label: 'Profile & Brand' },
+  { id: 'defaults',  icon: '📋', label: 'Quote Defaults' },
+  { id: 'templates', icon: '📄', label: 'Templates' },
+  { id: 'tax',       icon: '🧾', label: 'Tax Settings' },
+  { id: 'billing',   icon: '💳', label: 'Billing' },
+  { id: 'account',   icon: '⚠️', label: 'Account' },
 ];
 
 const DEFAULT_PROFILE: Profile = {
@@ -36,7 +38,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const p = searchParams.get('panel');
-    if (p && ['profile', 'defaults', 'tax', 'billing', 'account'].includes(p)) {
+    if (p && ['profile', 'defaults', 'templates', 'tax', 'billing', 'account'].includes(p)) {
       setPanel(p);
     }
   }, [searchParams]);
@@ -80,9 +82,10 @@ export default function SettingsPage() {
             ))}
           </div>
           <div className="settings-panel">
-            {panel === 'profile'  && <ProfilePanel  profile={profile} onChange={onChange} onError={msg => toast(msg, 'warning')} />}
-            {panel === 'defaults' && <DefaultsPanel profile={profile} onChange={onChange} />}
-            {panel === 'tax'      && <TaxPanel      profile={profile} onChange={onChange} />}
+            {panel === 'profile'   && <ProfilePanel  profile={profile} onChange={onChange} onError={msg => toast(msg, 'warning')} />}
+            {panel === 'defaults'  && <DefaultsPanel profile={profile} onChange={onChange} />}
+            {panel === 'templates' && <TemplatesPanel onError={msg => toast(msg, 'warning')} />}
+            {panel === 'tax'       && <TaxPanel      profile={profile} onChange={onChange} />}
             {panel === 'billing'  && <BillingPanel />}
             {panel === 'account'  && <AccountPanel />}
           </div>
