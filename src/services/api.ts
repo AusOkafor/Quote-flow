@@ -3,6 +3,8 @@ import type {
   APIResponse, APIKey, Client, CreateClientRequest, CreateQuoteRequest,
   DashboardStats, Profile, Quote, QuoteWithDetails, SendQuoteRequest,
   UnreadClientMessage, Team, TeamMember,
+  PaymentAccount, Payment, CreatePaymentLinkRequest, PaymentLinkResponse,
+  ConnectWiPayRequest, PaymentProcessor,
 } from '@/types';
 
 const BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? 'https://quote-service-p3fq.onrender.com';
@@ -149,7 +151,19 @@ export const publicApi = {
       `/q/${token}/accept`,
       { method: 'POST', body: JSON.stringify({ signature_name: signatureName }) },
     ),
+  createPaymentLink: (token: string, data: { payment_type: import('@/types').PaymentType; processor?: PaymentProcessor }) =>
+    post<PaymentLinkResponse>(`/q/${token}/pay`, data),
   getNotes:    (token: string) => req<import('@/types').QuoteNote[]>(`/q/${token}/notes`),
   postNote:    (token: string, data: { name: string; message: string; note_type?: 'message' | 'change_request' }) =>
     post<import('@/types').QuoteNote>(`/q/${token}/notes`, data),
+};
+
+export const paymentsApi = {
+  listAccounts: () => get<PaymentAccount[]>('/payments/accounts'),
+  connectStripe: () => post<{ url: string }>('/payments/connect/stripe', {}),
+  connectPayPal: () => post<{ url: string }>('/payments/connect/paypal', {}),
+  connectWiPay: (body: ConnectWiPayRequest) => post<{ status: string }>('/payments/connect/wipay', body),
+  disconnect: (processor: PaymentProcessor) => req<void>(`/payments/disconnect/${processor}`, { method: 'DELETE' }),
+  createLink: (body: CreatePaymentLinkRequest) => post<PaymentLinkResponse>('/payments/create-link', body),
+  listPayments: () => get<Payment[]>('/payments/history'),
 };

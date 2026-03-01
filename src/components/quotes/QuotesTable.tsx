@@ -3,6 +3,13 @@ import Badge from '@/components/ui/Badge';
 import { formatCurrency, relativeTime } from '@/lib/utils';
 import type { Quote } from '@/types';
 
+function PaymentIndicator({ quote }: { quote: Quote }) {
+  if (quote.status !== 'accepted') return <span style={{ color: 'var(--muted)' }}>—</span>;
+  if (quote.fully_paid_at || quote.paid_at) return <span style={{ color: 'var(--success)', fontWeight: 600 }}>✓ Paid</span>;
+  if (quote.deposit_paid_at) return <span style={{ color: 'var(--muted)' }}>🕐 Deposit paid</span>;
+  return <span style={{ color: 'var(--muted)' }}>—</span>;
+}
+
 interface Props {
   quotes: Quote[];
   onPreview:       (id: string) => void;
@@ -85,6 +92,7 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
               <th>Client</th>
               <th>Service</th>
               <th>Status</th>
+              <th>Payment</th>
               <th>Amount</th>
               <th>Date</th>
               <th>Actions</th>
@@ -93,7 +101,7 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: 52, color: 'var(--muted)' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: 52, color: 'var(--muted)' }}>
                   {search ? 'No results for that search.' : 'No quotes yet.'}
                 </td>
               </tr>
@@ -120,7 +128,8 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
                 </td>
                 <td style={{ fontWeight: 500 }}>{q.client?.name ?? '—'}</td>
                 <td style={{ color: 'var(--muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.title}</td>
-                <td><Badge status={q.status} paid={!!q.paid_at} /></td>
+                <td><Badge status={q.status} paid={!!(q.fully_paid_at || q.paid_at)} /></td>
+                <td><PaymentIndicator quote={q} /></td>
                 <td><span className="qt-amount">{formatCurrency(q.total, q.currency)}</span></td>
                 <td style={{ color: 'var(--muted)', fontSize: 13 }}>{relativeTime(q.created_at)}</td>
                 <td>

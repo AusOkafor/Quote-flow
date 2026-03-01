@@ -8,6 +8,7 @@ import LandingPage     from '@/pages/LandingPage';
 import LoginPage       from '@/pages/LoginPage';
 import PricingPage     from '@/pages/PricingPage';
 import PublicQuotePage from '@/pages/PublicQuotePage';
+import PaymentCompletePage from '@/pages/PaymentCompletePage';
 import DashboardPage   from '@/pages/DashboardPage';
 import QuotesPage      from '@/pages/QuotesPage';
 import CreateQuotePage from '@/pages/CreateQuotePage';
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/pricing"  element={<PricingPage />} />
         <Route path="/q/:token" element={<PublicQuotePage />} />
+        <Route path="/payment/complete" element={<PaymentCompletePage />} />
 
         <Route path="/app" element={<AuthGuard><DataRefreshProvider><AppShell><DashboardPage /></AppShell></DataRefreshProvider></AuthGuard>} />
         <Route path="/app/quotes"        element={<AuthGuard><DataRefreshProvider><AppShell><QuotesPage /></AppShell></DataRefreshProvider></AuthGuard>} />

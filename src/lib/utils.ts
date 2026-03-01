@@ -90,3 +90,11 @@ export function quotePublicUrl(shareToken: string): string {
 export function copyToClipboard(text: string): Promise<void> {
   return navigator.clipboard.writeText(text);
 }
+
+/** Parse deposit field (e.g. "50%" or "50") → dollar amount for a given total. */
+export function calcDepositAmount(deposit: string, total: number): number {
+  const raw = deposit.replace(/%/g, '').trim();
+  const pct = parseFloat(raw);
+  if (Number.isNaN(pct) || pct <= 0 || pct > 100) return total * 0.5;
+  return Math.round(total * (pct / 100) * 100) / 100;
+}

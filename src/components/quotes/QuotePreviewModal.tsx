@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { quotesApi } from '@/services/api';
-import { formatCurrency, formatDateLong, formatDateTime, quotePublicUrl, copyToClipboard } from '@/lib/utils';
+import { quotesApi, paymentsApi } from '@/services/api';
+import { formatCurrency, formatDateLong, formatDateTime, quotePublicUrl, copyToClipboard, calcDepositAmount } from '@/lib/utils';
 import type { Quote, QuoteNote } from '@/types';
 
 interface Props {
@@ -21,6 +21,7 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
   const [notes, setNotes] = useState<QuoteNote[]>([]);
   const [replyMsg, setReplyMsg] = useState('');
   const [postingReply, setPostingReply] = useState(false);
+  const [requestingBalance, setRequestingBalance] = useState(false);
   useEffect(() => {
     if (!open || !quote?.id) return;
     quotesApi.getNotes(quote.id).then(setNotes).catch(() => {});
@@ -30,6 +31,22 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
   const loadNotes = () => {
     if (!quote?.id) return;
     quotesApi.getNotes(quote.id).then(setNotes).catch(() => {});
+  };
+
+  const handleRequestBalancePayment = async () => {
+    if (!quote?.id) return;
+    setRequestingBalance(true);
+    try {
+      const res = await paymentsApi.createLink({ quote_id: quote.id, payment_type: 'balance' });
+      if (res.payment_url) {
+        await copyToClipboard(res.payment_url);
+        toast?.('Balance payment link copied! Send it to your client.', 'success');
+      }
+    } catch {
+      toast?.('Could not create payment link. Connect a processor in Settings.', 'warning');
+    } finally {
+      setRequestingBalance(false);
+    }
   };
 
   const handleReply = async () => {
@@ -106,6 +123,32 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
                 {quote.revisions && <><strong>Revisions:</strong> {quote.revisions}<br /></>}
                 {quote.payment_method && <><strong>Payment:</strong> {quote.payment_method}</>}
               </div>
+            </div>
+          </div>
+        )}
+
+        {quote.status === 'accepted' && (
+          <div style={{ marginTop: 12, padding: 12, background: 'var(--cream)', borderRadius: 8, border: '1px solid var(--border)' }}>
+            <div className="qp-party-lbl">Payment</div>
+            <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+              {quote.fully_paid_at || quote.paid_at ? (
+                <span style={{ color: 'var(--success)', fontWeight: 600 }}>✓ Fully paid {formatCurrency(quote.total, quote.currency)}</span>
+              ) : quote.deposit_paid_at ? (
+                <>
+                  <span style={{ color: 'var(--muted)' }}>○ Deposit paid {formatCurrency(calcDepositAmount(quote.deposit || '50%', quote.total), quote.currency)} · Balance due {formatCurrency(quote.total - calcDepositAmount(quote.deposit || '50%', quote.total), quote.currency)}</span>
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => void handleRequestBalancePayment()}
+                      disabled={requestingBalance}
+                    >
+                      {requestingBalance ? 'Creating…' : 'Request Balance Payment'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <span style={{ color: 'var(--muted)' }}>— Not yet paid</span>
+              )}
             </div>
           </div>
         )}

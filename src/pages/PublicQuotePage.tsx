@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
-import { formatCurrency, formatDateLong, formatDateShort, formatDateTime } from '@/lib/utils';
-import type { QuoteWithDetails, QuoteNote } from '@/types';
+import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount } from '@/lib/utils';
+import type { QuoteWithDetails, QuoteNote, PaymentProcessor } from '@/types';
 
 export default function PublicQuotePage() {
   const { token } = useParams<{ token: string }>();
@@ -21,6 +21,9 @@ export default function PublicQuotePage() {
   const [showChangeRequest, setShowChangeRequest] = useState(false);
   const [changeRequestMsg, setChangeRequestMsg] = useState('');
   const [postingChangeRequest, setPostingChangeRequest] = useState(false);
+  const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('deposit');
+  const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState('');
 
   useEffect(() => {
     if (!token) return;
@@ -37,6 +40,11 @@ export default function PublicQuotePage() {
     if (!token || !quote) return;
     publicApi.getNotes(token).then(setNotes).catch(() => {});
   }, [token, quote]);
+
+  useEffect(() => {
+    if (quote?.creator?.default_payment_timing === 'full') setPaymentType('full');
+    else if (quote?.creator?.default_payment_timing === 'deposit') setPaymentType('deposit');
+  }, [quote?.creator?.default_payment_timing]);
 
   const loadNotes = () => {
     if (!token) return;
@@ -80,6 +88,28 @@ export default function PublicQuotePage() {
     }
   };
 
+  const handlePay = async (processor?: PaymentProcessor) => {
+    if (!token || !quote) return;
+    setPaymentError('');
+    setPaymentLoading(processor ?? 'default');
+    try {
+      const result = await publicApi.createPaymentLink(token, {
+        payment_type: paymentType,
+        ...(processor ? { processor } : {}),
+      });
+      if (result.payment_url) {
+        window.location.href = result.payment_url;
+        return;
+      }
+      setPaymentError('Payment link failed. Please try again or pay manually.');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Payment link failed. Please try again or pay manually.';
+      setPaymentError(msg);
+    } finally {
+      setPaymentLoading(null);
+    }
+  };
+
   const handleAccept = async () => {
     if (!token) return;
     if (quote?.require_signature && !signatureName.trim()) {
@@ -118,6 +148,10 @@ export default function PublicQuotePage() {
 
   const items = quote.line_items ?? [];
   const accent = quote.creator?.brand_color || 'var(--accent)';
+  const processors = quote.payment_processors ?? [];
+  const hasPaymentSection = processors.length > 0 && (accepted || quote.status === 'accepted');
+  const depositAmount = calcDepositAmount(quote.deposit || '50%', quote.total);
+  const isUsd = quote.currency === 'USD';
 
   // Expiry countdown
   const today = new Date();
@@ -173,6 +207,71 @@ export default function PublicQuotePage() {
       {accepted && (
         <div className="accepted-banner" style={{ maxWidth: 760, margin: '0 auto 24px' }}>
           ✅ You have accepted this quote. The freelancer has been notified.
+        </div>
+      )}
+      {hasPaymentSection && (
+        <div className="modal" style={{ maxWidth: 760, margin: '0 auto 24px', padding: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>✓ Quote accepted! Time to pay.</div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>How much would you like to pay now?</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: 12, background: paymentType === 'deposit' ? 'var(--cream)' : 'transparent', borderRadius: 8, border: '1px solid ' + (paymentType === 'deposit' ? 'var(--accent)' : 'var(--border)') }}>
+                <input type="radio" name="pay_type" checked={paymentType === 'deposit'} onChange={() => setPaymentType('deposit')} />
+                <span>Pay deposit only</span>
+                <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(depositAmount, quote.currency)}</span>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>({quote.deposit || '50%'} upfront)</span>
+              </label>
+              <label
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: 12,
+                  background: paymentType === 'full' ? 'var(--cream)' : 'transparent',
+                  borderRadius: 8,
+                  border: '1px solid ' + (paymentType === 'full' ? 'var(--accent)' : 'var(--border)'),
+                }}
+              >
+                <input type="radio" name="pay_type" checked={paymentType === "full"} onChange={() => setPaymentType("full")} />
+                <span>Pay full amount</span>
+                <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(quote.total, quote.currency)}</span>
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>(saves follow-up)</span>
+              </label>
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 16 }}>
+            {processors.includes('wipay') && (
+              <button
+                className="btn btn-dark"
+                style={{ width: '100%', marginBottom: 10 }}
+                onClick={() => void handlePay('wipay')}
+                disabled={!!paymentLoading}
+              >
+                {paymentLoading === 'wipay' ? 'Redirecting…' : 'Pay with WiPay →'}
+              </button>
+            )}
+            {processors.includes('stripe') && isUsd && (
+              <button
+                className="btn btn-dark"
+                style={{ width: '100%', marginBottom: 10 }}
+                onClick={() => void handlePay('stripe')}
+                disabled={!!paymentLoading}
+              >
+                {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay with Stripe →'}
+              </button>
+            )}
+            {processors.includes('paypal') && isUsd && (
+              <button
+                className="btn btn-dark"
+                style={{ width: '100%', marginBottom: 10 }}
+                onClick={() => void handlePay('paypal')}
+                disabled={!!paymentLoading}
+              >
+                {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay with PayPal →'}
+              </button>
+            )}
+          </div>
+          {paymentError && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{paymentError}</div>}
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+            Prefer to pay by bank transfer or cash? Ask {businessName} to mark as paid once received.
+          </div>
         </div>
       )}
       <div className="modal" style={{ maxWidth: 760, margin: '0 auto' }}>
@@ -349,11 +448,11 @@ export default function PublicQuotePage() {
                       marginBottom: 8,
                       borderRadius: 8,
                       background: n.note_type === 'change_request' ? 'rgba(232,92,47,.08)' : n.author_type === 'client' ? 'rgba(0,0,0,.04)' : 'rgba(var(--accent-rgb, 47, 125, 232), 0.08)',
-                      borderLeft: `3px solid ${n.note_type === 'change_request' ? 'var(--accent)' : n.author_type === 'client' ? 'var(--muted)' : accent}`,
+                      borderLeft: '3px solid ' + (n.note_type === 'change_request' ? 'var(--accent)' : n.author_type === 'client' ? 'var(--muted)' : accent),
                     }}
                   >
                     <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {n.note_type === 'change_request' && <span style={{ fontSize: 10, background: 'var(--accent)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>Change Request</span>}
+                      {n.note_type === 'change_request' && <span style={{ fontSize: 10, background: 'var(--accent)', color: "#fff", padding: '2px 6px', borderRadius: 4 }}>Change Request</span>}
                       {n.author_name} · {formatDateTime(n.created_at)}
                     </div>
                     <div style={{ fontSize: 14, lineHeight: 1.5 }}>{n.message}</div>

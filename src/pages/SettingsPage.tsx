@@ -8,6 +8,7 @@ import BillingPanel     from '@/components/settings/BillingPanel';
 import TeamsPanel       from '@/components/settings/TeamsPanel';
 import ApiKeysPanel     from '@/components/settings/ApiKeysPanel';
 import TemplatesPanel   from '@/components/settings/TemplatesPanel';
+import PaymentsPanel    from '@/components/settings/PaymentsPanel';
 import AccountPanel     from '@/components/settings/AccountPanel';
 import { useProfile }   from '@/hooks/useProfile';
 import { useAppToast }  from '@/components/layout/ToastProvider';
@@ -19,6 +20,7 @@ const NAV = [
   { id: 'defaults',  icon: '📋', label: 'Quote Defaults' },
   { id: 'templates', icon: '📄', label: 'Templates' },
   { id: 'tax',       icon: '🧾', label: 'Tax Settings' },
+  { id: 'payments',  icon: '💰', label: 'Payments' },
   { id: 'billing',   icon: '💳', label: 'Billing' },
   { id: 'team',      icon: '👥', label: 'Team' },
   { id: 'api',       icon: '🔑', label: 'API' },
@@ -31,6 +33,7 @@ const DEFAULT_PROFILE: Profile = {
   default_validity_days: 14, default_deposit: '50% upfront', default_revisions: '2 rounds',
   default_notes: '', default_payment: '', tax_type: 'GCT', tax_rate: 15, tax_number: '',
   tax_exempt_default: true, show_tax_breakdown: true, plan: 'free',
+  default_payment_timing: 'link_only', preferred_usd_processor: null,
   notify_accepted: true, notify_viewed: true, notify_expiring: true, notify_weekly: false,
   created_at: '', updated_at: '',
 };
@@ -42,8 +45,8 @@ export default function SettingsPage() {
   const [panel, setPanel] = useState('profile');
 
   useEffect(() => {
-    const p = searchParams.get('panel');
-    if (p && ['profile', 'defaults', 'templates', 'tax', 'billing', 'team', 'api', 'account'].includes(p)) {
+    const p = searchParams.get('panel') ?? searchParams.get('tab');
+    if (p && ['profile', 'defaults', 'templates', 'tax', 'payments', 'billing', 'team', 'api', 'account'].includes(p)) {
       setPanel(p);
     }
   }, [searchParams]);
@@ -95,6 +98,7 @@ export default function SettingsPage() {
             {panel === 'defaults'  && <DefaultsPanel profile={profile} onChange={onChange} />}
             {panel === 'templates' && <TemplatesPanel onError={msg => toast(msg, 'warning')} />}
             {panel === 'tax'       && <TaxPanel      profile={profile} onChange={onChange} />}
+            {panel === 'payments'  && <PaymentsPanel profile={profile} onChange={onChange} />}
             {panel === 'billing'  && <BillingPanel />}
             {panel === 'team'     && <TeamsPanel onError={msg => toast(msg, 'warning')} />}
             {panel === 'api'      && <ApiKeysPanel onError={msg => toast(msg, 'warning')} />}

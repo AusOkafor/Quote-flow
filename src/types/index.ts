@@ -1,4 +1,7 @@
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'expired' | 'declined';
+export type PaymentProcessor = 'wipay' | 'stripe' | 'paypal';
+export type PaymentType = 'full' | 'deposit' | 'balance';
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type Currency    = 'JMD' | 'USD' | 'TTD' | 'BBD';
 export type SendChannel = 'email' | 'whatsapp' | 'link';
 export type ToastType   = 'success' | 'info' | 'warning' | 'default';
@@ -48,6 +51,8 @@ export interface Profile {
   tax_exempt_default: boolean;
   show_tax_breakdown: boolean;
   plan?: string;
+  default_payment_timing?: 'full' | 'deposit' | 'link_only';
+  preferred_usd_processor?: 'stripe' | 'paypal' | null;
   notify_accepted: boolean;
   notify_viewed: boolean;
   notify_expiring: boolean;
@@ -110,6 +115,8 @@ export interface Quote {
   accepted_at?: string;
   accepted_by_name?: string;
   paid_at?: string;
+  deposit_paid_at?: string;
+  fully_paid_at?: string;
   sent_at?: string;
   share_token: string;
   created_at: string;
@@ -133,7 +140,14 @@ export interface QuoteNote {
 export interface QuoteWithDetails extends Quote {
   client: Client;
   line_items: LineItem[];
-  creator?: { logo_url?: string | null; business_name?: string; brand_color?: string; white_label?: boolean };
+  creator?: {
+    logo_url?: string | null;
+    business_name?: string;
+    brand_color?: string;
+    white_label?: boolean;
+    default_payment_timing?: 'full' | 'deposit' | 'link_only';
+  };
+  payment_processors?: PaymentProcessor[];
 }
 
 export interface LineItemInput {
@@ -264,4 +278,50 @@ export interface CreateAPIKeyResponse {
   name: string;
   key: string;  // raw key — only shown once
   created_at: string;
+}
+
+export interface PaymentAccount {
+  id: string;
+  processor: PaymentProcessor;
+  stripe_account_id?: string;
+  wipay_account_id?: string;
+  paypal_merchant_id?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Payment {
+  id: string;
+  quote_id: string;
+  processor: PaymentProcessor;
+  payment_type: PaymentType;
+  amount: number;
+  platform_fee: number;
+  net_amount: number;
+  currency: string;
+  status: PaymentStatus;
+  payment_url?: string;
+  paid_at?: string;
+  created_at: string;
+}
+
+export interface CreatePaymentLinkRequest {
+  quote_id: string;
+  payment_type: PaymentType;
+  processor?: PaymentProcessor;
+}
+
+export interface PaymentLinkResponse {
+  payment_url: string;
+  amount: number;
+  platform_fee: number;
+  net_amount: number;
+  currency: string;
+  payment_type: PaymentType;
+  processor: PaymentProcessor;
+}
+
+export interface ConnectWiPayRequest {
+  account_id: string;
+  api_key: string;
 }
