@@ -58,7 +58,6 @@ export default function DashboardPage() {
         actions={
           <>
             {displayCurrency && <span style={{ fontSize: 13, color: 'var(--muted)' }}>{displayCurrency}</span>}
-            <button className="btn btn-secondary" onClick={() => toast('Test notification — toast system works!', 'info', 4000)} style={{ marginRight: 8 }} title="Verify toast notifications work">🔔 Test</button>
             <button className="btn btn-dark" onClick={() => navigate('/app/create')}>+ New Quote</button>
           </>
         }

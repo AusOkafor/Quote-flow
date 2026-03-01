@@ -42,7 +42,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             if (notified.includes(m.quote_id)) continue;
             const label = m.note_type === 'change_request' ? 'Requested changes' : 'New message';
             const from = m.author_name || m.client_name || 'Client';
-            toast(`${label} from ${from} on #${m.quote_number}: "${m.message.slice(0, 60)}${m.message.length > 60 ? '…' : ''}"`, 'info', 5000);
+            toast(`${label} from ${from} on #${m.quote_number}: "${m.message.slice(0, 60)}${m.message.length > 60 ? '…' : ''}"`, 'info', 0);
             notified.push(m.quote_id);
           }
           if (list.length > 0) {
