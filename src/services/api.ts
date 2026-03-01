@@ -118,6 +118,6 @@ export const publicApi = {
       { method: 'POST', body: JSON.stringify({ signature_name: signatureName }) },
     ),
   getNotes:    (token: string) => req<import('@/types').QuoteNote[]>(`/q/${token}/notes`),
-  postNote:    (token: string, data: { name: string; message: string }) =>
+  postNote:    (token: string, data: { name: string; message: string; note_type?: 'message' | 'change_request' }) =>
     post<import('@/types').QuoteNote>(`/q/${token}/notes`, data),
 };

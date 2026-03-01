@@ -172,11 +172,12 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
                     padding: '8px 10px',
                     marginBottom: 6,
                     borderRadius: 8,
-                    background: n.author_type === 'client' ? 'rgba(0,0,0,.04)' : 'rgba(var(--accent-rgb, 47, 125, 232), 0.08)',
-                    borderLeft: `3px solid ${n.author_type === 'client' ? 'var(--muted)' : accent}`,
+                    background: n.note_type === 'change_request' ? 'rgba(232,92,47,.08)' : n.author_type === 'client' ? 'rgba(0,0,0,.04)' : 'rgba(var(--accent-rgb, 47, 125, 232), 0.08)',
+                    borderLeft: `3px solid ${n.note_type === 'change_request' ? 'var(--accent)' : n.author_type === 'client' ? 'var(--muted)' : accent}`,
                   }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 2, color: 'var(--text)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 2, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {n.note_type === 'change_request' && <span style={{ fontSize: 9, background: 'var(--accent)', color: '#fff', padding: '1px 5px', borderRadius: 3 }}>Change Request</span>}
                     {n.author_name} · {formatDateTime(n.created_at)}
                   </div>
                   <div style={{ fontSize: 13, lineHeight: 1.4 }}>{n.message}</div>

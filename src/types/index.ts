@@ -108,6 +108,7 @@ export interface QuoteNote {
   author_type: 'client' | 'freelancer';
   author_name: string;
   message: string;
+  note_type?: 'message' | 'change_request';
   read_at?: string | null;
   created_at: string;
 }

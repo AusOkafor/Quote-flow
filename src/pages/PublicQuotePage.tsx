@@ -18,6 +18,9 @@ export default function PublicQuotePage() {
   const [noteName,  setNoteName] = useState('');
   const [noteMsg,   setNoteMsg]  = useState('');
   const [postingNote, setPostingNote] = useState(false);
+  const [showChangeRequest, setShowChangeRequest] = useState(false);
+  const [changeRequestMsg, setChangeRequestMsg] = useState('');
+  const [postingChangeRequest, setPostingChangeRequest] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -52,6 +55,28 @@ export default function PublicQuotePage() {
       toast('Could not send message. Please try again.', 'warning');
     } finally {
       setPostingNote(false);
+    }
+  };
+
+  const handlePostChangeRequest = async () => {
+    if (!token || !changeRequestMsg.trim() || !noteName.trim()) return;
+    setPostingChangeRequest(true);
+    try {
+      await publicApi.postNote(token, {
+        name: noteName.trim(),
+        message: changeRequestMsg.trim(),
+        note_type: 'change_request',
+      });
+      setChangeRequestMsg('');
+      setShowChangeRequest(false);
+      loadNotes();
+      const updated = await publicApi.getQuote(token);
+      setQuote(updated);
+      toast('Change request sent. The freelancer will be notified and can update the quote.', 'success', 5000);
+    } catch {
+      toast('Could not send request. Please try again.', 'warning');
+    } finally {
+      setPostingChangeRequest(false);
     }
   };
 
@@ -233,7 +258,14 @@ export default function PublicQuotePage() {
             <div className="qp-valid">Valid for {quote.validity_days} days</div>
             {!accepted && quote.status !== 'accepted' && !isExpired && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
-                {quote.require_signature && (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => setShowChangeRequest(prev => !prev)}
+                  >
+                    ✏️ Request Changes
+                  </button>
+                  {quote.require_signature && (
                   <div style={{ width: '100%', maxWidth: 320 }}>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--muted)' }}>
                       Sign with your full name
@@ -253,13 +285,36 @@ export default function PublicQuotePage() {
                     />
                   </div>
                 )}
-                <button
-                  className="btn btn-success"
-                  onClick={() => void handleAccept()}
-                  disabled={accepting || (quote.require_signature && !signatureName.trim())}
-                >
-                  {accepting ? 'Accepting…' : '✓ Accept this Quote'}
-                </button>
+                  <button
+                    className="btn btn-success"
+                    onClick={() => void handleAccept()}
+                    disabled={accepting || (quote.require_signature && !signatureName.trim())}
+                  >
+                    {accepting ? 'Accepting…' : '✓ Accept this Quote'}
+                  </button>
+                </div>
+                {showChangeRequest && (
+                  <div style={{ width: '100%', maxWidth: 480, padding: 16, background: 'var(--cream)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--muted)' }}>Describe the changes you'd like</div>
+                    <textarea
+                      placeholder="e.g. Can we reduce the price for the logo design? Or extend the timeline by 1 week?"
+                      value={changeRequestMsg}
+                      onChange={e => setChangeRequestMsg(e.target.value)}
+                      rows={4}
+                      style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, resize: 'vertical', marginBottom: 10 }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <button className="btn btn-outline btn-sm" onClick={() => { setShowChangeRequest(false); setChangeRequestMsg(''); }}>Cancel</button>
+                      <button
+                        className="btn btn-dark btn-sm"
+                        onClick={() => void handlePostChangeRequest()}
+                        disabled={postingChangeRequest || !changeRequestMsg.trim()}
+                      >
+                        {postingChangeRequest ? 'Sending…' : 'Send Request'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {isExpired && !accepted && quote.status !== 'accepted' && (
@@ -289,11 +344,12 @@ export default function PublicQuotePage() {
                       padding: '10px 12px',
                       marginBottom: 8,
                       borderRadius: 8,
-                      background: n.author_type === 'client' ? 'rgba(0,0,0,.04)' : 'rgba(var(--accent-rgb, 47, 125, 232), 0.08)',
-                      borderLeft: `3px solid ${n.author_type === 'client' ? 'var(--muted)' : accent}`,
+                      background: n.note_type === 'change_request' ? 'rgba(232,92,47,.08)' : n.author_type === 'client' ? 'rgba(0,0,0,.04)' : 'rgba(var(--accent-rgb, 47, 125, 232), 0.08)',
+                      borderLeft: `3px solid ${n.note_type === 'change_request' ? 'var(--accent)' : n.author_type === 'client' ? 'var(--muted)' : accent}`,
                     }}
                   >
-                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--text)' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {n.note_type === 'change_request' && <span style={{ fontSize: 10, background: 'var(--accent)', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>Change Request</span>}
                       {n.author_name} · {formatDateTime(n.created_at)}
                     </div>
                     <div style={{ fontSize: 14, lineHeight: 1.5 }}>{n.message}</div>
