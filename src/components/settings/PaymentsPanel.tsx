@@ -76,155 +76,149 @@ export default function PaymentsPanel({ profile, onChange }: Props) {
   const defaultTiming = profile.default_payment_timing ?? 'link_only';
   const preferredUsd = profile.preferred_usd_processor ?? null;
 
+  const processorCard = (
+    processor: PaymentProcessor,
+    title: string,
+    subtitle: string,
+    note?: string,
+    accentColor: string = 'var(--accent)',
+  ) => (
+    <div
+      key={processor}
+      className="pay-processor-card"
+      style={{
+        borderLeft: `4px solid ${accentColor}`,
+      }}
+    >
+      <div className="pay-processor-header">
+        <div>
+          <div className="pay-processor-title">{title}</div>
+          <div className="pay-processor-sub">{subtitle}</div>
+          {note && (
+            <div className="pay-processor-note">
+              <span className="pay-processor-note-icon">ℹ</span>
+              {note}
+            </div>
+          )}
+        </div>
+        {isConnected(processor) ? (
+          <div className="pay-processor-status">
+            <span className="pay-processor-badge">Connected</span>
+            <button className="btn btn-outline btn-sm" onClick={() => void handleDisconnect(processor)}>
+              Disconnect
+            </button>
+          </div>
+        ) : processor === 'wipay' ? (
+          <div className="pay-processor-form">
+            <input
+              type="text"
+              placeholder="Account ID"
+              value={wipayAccountId}
+              onChange={e => setWipayAccountId(e.target.value)}
+              className="pay-input"
+            />
+            <input
+              type="password"
+              placeholder="API Key"
+              value={wipayApiKey}
+              onChange={e => setWipayApiKey(e.target.value)}
+              className="pay-input"
+            />
+            <button
+              className="btn btn-dark"
+              onClick={() => void handleConnectWiPay()}
+              disabled={wipayLoading || !wipayAccountId.trim() || !wipayApiKey.trim()}
+            >
+              {wipayLoading ? 'Connecting…' : 'Connect WiPay'}
+            </button>
+          </div>
+        ) : (
+          <button
+            className="btn btn-dark"
+            onClick={() => (processor === 'stripe' ? void connectStripe() : void connectPayPal())}
+          >
+            Connect with {PROCESSOR_LABELS[processor]}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="sp-title">Payment Processors</div>
       <div className="sp-sub">Connect payment processors to collect payments directly on quotes.</div>
 
       {loading ? (
-        <div style={{ padding: 24, color: 'var(--muted)' }}>Loading…</div>
+        <div className="pay-loading">Loading…</div>
       ) : (
-        <>
-          {/* WiPay */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>🇯🇲 WiPay</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>Caribbean payments · JMD, TTD, BBD</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
-                  ⚠ Requires business registration at wipayfinancial.com before connecting
-                </div>
-                {isConnected('wipay') ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>✓ Connected</span>
-                    <button className="btn btn-outline btn-sm" onClick={() => { void handleDisconnect('wipay'); }}>
-                      Disconnect
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 320 }}>
-                    <input
-                      type="text"
-                      placeholder="Account ID"
-                      value={wipayAccountId}
-                      onChange={e => setWipayAccountId(e.target.value)}
-                      style={{ padding: 10, borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }}
-                    />
-                    <input
-                      type="password"
-                      placeholder="API Key"
-                      value={wipayApiKey}
-                      onChange={e => setWipayApiKey(e.target.value)}
-                      style={{ padding: 10, borderRadius: 8, border: '1px solid var(--border)', fontSize: 14 }}
-                    />
-                    <button
-                      className="btn btn-dark" onClick={() => void handleConnectWiPay()}
-                      disabled={wipayLoading || !wipayAccountId.trim() || !wipayApiKey.trim()}
-                    >
-                      {wipayLoading ? 'Connecting…' : 'Connect WiPay'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Stripe */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>💳 Stripe</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>International & card payments · USD</div>
-                {isConnected('stripe') ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>✓ Connected</span>
-                    <button className="btn btn-outline btn-sm" onClick={() => { void handleDisconnect('stripe'); }}>
-                      Disconnect
-                    </button>
-                  </div>
-                ) : (
-                  <button className="btn btn-dark" onClick={() => void connectStripe()}>
-                    Connect with Stripe
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* PayPal */}
-          <div className="card" style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>🅿 PayPal</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 8 }}>Widely accepted · USD only</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
-                  ⚠ USD quotes only — not supported for JMD
-                </div>
-                {isConnected('paypal') ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: 'var(--success)', fontWeight: 600 }}>✓ Connected</span>
-                    <button className="btn btn-outline btn-sm" onClick={() => { void handleDisconnect('paypal'); }}>
-                      Disconnect
-                    </button>
-                  </div>
-                ) : (
-                  <button className="btn btn-dark" onClick={() => void connectPayPal()}>
-                    Connect with PayPal
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </>
+        <div className="pay-processors">
+          {processorCard(
+            'wipay',
+            'WiPay',
+            'Caribbean payments · JMD, TTD, BBD',
+            'Requires business registration at wipayfinancial.com before connecting',
+            '#0D9488',
+          )}
+          {processorCard('stripe', 'Stripe', 'International & card payments · USD', undefined, '#635BFF')}
+          {processorCard(
+            'paypal',
+            'PayPal',
+            'Widely accepted · USD only',
+            'USD quotes only — not supported for JMD',
+            '#003087',
+          )}
+        </div>
       )}
 
-      {/* Payment timing */}
-      <div className="sp-title" style={{ marginTop: 24 }}>Default Payment Timing</div>
+      <div className="sp-title pay-section-title">Default Payment Timing</div>
       <div className="sp-sub">When clients accept a quote, how should payment work?</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+      <div className="pay-timing-options">
         {[
           { value: 'full' as const, label: 'Full payment on acceptance', desc: 'Pay 100% right when accepting' },
           { value: 'deposit' as const, label: 'Deposit on acceptance', desc: 'Pay deposit % now. Balance due when work is done.' },
           { value: 'link_only' as const, label: 'Payment link only', desc: 'Accept and payment are separate. Button stays on page.' },
         ].map(opt => (
-          <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <label
+            key={opt.value}
+            className={`pay-timing-option ${defaultTiming === opt.value ? 'selected' : ''}`}
+          >
             <input
               type="radio"
               name="payment_timing"
               checked={defaultTiming === opt.value}
               onChange={() => onChange({ default_payment_timing: opt.value })}
             />
-            <div>
-              <div style={{ fontWeight: 500 }}>{opt.label}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>{opt.desc}</div>
+            <div className="pay-timing-content">
+              <div className="pay-timing-label">{opt.label}</div>
+              <div className="pay-timing-desc">{opt.desc}</div>
             </div>
           </label>
         ))}
       </div>
 
-      {/* USD processor preference */}
       {(isConnected('stripe') && isConnected('paypal')) && (
         <>
-          <div className="sp-title">For USD quotes (Stripe + PayPal both connected)</div>
-          <div className="sp-sub">Prefer:</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <div className="sp-title pay-section-title">USD Processor Preference</div>
+          <div className="sp-sub">When both are connected, which should clients see first for USD quotes?</div>
+          <div className="pay-usd-pref">
+            <label className={`pay-usd-option ${preferredUsd === 'stripe' ? 'selected' : ''}`}>
               <input
                 type="radio"
                 name="usd_processor"
                 checked={preferredUsd === 'stripe'}
                 onChange={() => onChange({ preferred_usd_processor: 'stripe' })}
               />
-              Stripe
+              <span>Stripe</span>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <label className={`pay-usd-option ${preferredUsd === 'paypal' ? 'selected' : ''}`}>
               <input
                 type="radio"
                 name="usd_processor"
                 checked={preferredUsd === 'paypal'}
                 onChange={() => onChange({ preferred_usd_processor: 'paypal' })}
               />
-              PayPal
+              <span>PayPal</span>
             </label>
           </div>
         </>
