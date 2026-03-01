@@ -115,7 +115,7 @@ export default function QuotesPage() {
           onDuplicate={id => void handleDuplicate(id)}
           onDelete={id => void handleDelete(id)}
           onSend={id => setSendId(id)}
-          onEdit={id => navigate(`/app/create?edit=${id}`)}
+          onEdit={id => navigate(`/app/quotes/${id}/edit`)}
           onSaveAsTemplate={id => setSaveAsTemplateId(id)}
         />
         )}

@@ -32,10 +32,11 @@ async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   return json.data as T;
 }
 
-const get  = <T>(p: string) => req<T>(p, { method: 'GET' });
-const del  = <T>(p: string) => req<T>(p, { method: 'DELETE' });
-const post = <T>(p: string, b: unknown) => req<T>(p, { method: 'POST', body: JSON.stringify(b) });
-const put  = <T>(p: string, b: unknown) => req<T>(p, { method: 'PUT',  body: JSON.stringify(b) });
+const get   = <T>(p: string) => req<T>(p, { method: 'GET' });
+const del   = <T>(p: string) => req<T>(p, { method: 'DELETE' });
+const post  = <T>(p: string, b: unknown) => req<T>(p, { method: 'POST', body: JSON.stringify(b) });
+const put   = <T>(p: string, b: unknown) => req<T>(p, { method: 'PUT',  body: JSON.stringify(b) });
+const patch = <T>(p: string, b: unknown) => req<T>(p, { method: 'PATCH', body: JSON.stringify(b) });
 
 export const dashboardApi = {
   getStats: (currency?: string) =>
@@ -69,6 +70,8 @@ export const quotesApi = {
   },
   get:       (id: string) => get<QuoteWithDetails>(`/quotes/${id}`),
   create:    (data: CreateQuoteRequest) => post<Quote>('/quotes', data),
+  update:    (id: string, data: { title?: string; currency?: string; validity_days?: number; notes?: string; deposit?: string; payment_method?: string; delivery_timeline?: string; revisions?: string; tax_exempt?: boolean; tax_rate?: number; require_signature?: boolean; track_views?: boolean; send_reminder?: boolean; line_items?: { description: string; quantity: number; unit_price: number }[] }) =>
+    patch<QuoteWithDetails>(`/quotes/${id}`, data),
   delete:    (id: string) => del<{ deleted: boolean }>(`/quotes/${id}`),
   duplicate: (id: string) => post<Quote>(`/quotes/${id}/duplicate`, {}),
   markPaid:  (id: string) => post<QuoteWithDetails>(`/quotes/${id}/mark-paid`, {}),

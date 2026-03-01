@@ -37,8 +37,9 @@ export default function App() {
         <Route path="/q/:token" element={<PublicQuotePage />} />
 
         <Route path="/app" element={<AuthGuard><AppShell><DashboardPage /></AppShell></AuthGuard>} />
-        <Route path="/app/quotes"   element={<AuthGuard><AppShell><QuotesPage /></AppShell></AuthGuard>} />
-        <Route path="/app/create"   element={<AuthGuard><AppShell><CreateQuotePage /></AppShell></AuthGuard>} />
+        <Route path="/app/quotes"        element={<AuthGuard><AppShell><QuotesPage /></AppShell></AuthGuard>} />
+        <Route path="/app/quotes/:id/edit" element={<AuthGuard><AppShell><CreateQuotePage /></AppShell></AuthGuard>} />
+        <Route path="/app/create"        element={<AuthGuard><AppShell><CreateQuotePage /></AppShell></AuthGuard>} />
         <Route path="/app/clients"  element={<AuthGuard><AppShell><ClientsPage /></AppShell></AuthGuard>} />
         <Route path="/app/settings" element={<AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>} />
 

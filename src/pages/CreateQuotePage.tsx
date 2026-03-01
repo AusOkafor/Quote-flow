@@ -1,5 +1,5 @@
 import { useState, Fragment, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Topbar             from '@/components/layout/Topbar';
 import Toggle             from '@/components/ui/Toggle';
 import LineItemsEditor    from '@/components/quotes/LineItemsEditor';
@@ -7,8 +7,8 @@ import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useClients }     from '@/hooks/useClients';
 import { quotesApi, templatesApi, isFreeTierLimitError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
-import { calcTotals }     from '@/lib/utils';
-import type { LineItemInput, Currency, QuoteTemplate } from '@/types';
+import { calcTotals, copyToClipboard } from '@/lib/utils';
+import type { LineItemInput, Currency, QuoteTemplate, QuoteWithDetails } from '@/types';
 
 const STEPS = ['Client Info', 'Line Items', 'Terms & Notes', 'Review & Send'];
 
@@ -31,14 +31,18 @@ interface FormState {
 
 export default function CreateQuotePage() {
   const navigate  = useNavigate();
+  const { id: editId } = useParams<{ id: string }>();
   const toast     = useAppToast();
   const { clients }  = useClients();
+  const isEdit = !!editId;
 
   const [step, setStep]           = useState(1);
   const [loading, setLoading]     = useState(false);
+  const [loadingQuote, setLoadingQuote] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [items, setItems]         = useState<LineItemInput[]>([{ description: '', quantity: 1, unit_price: 0 }]);
+  const [savedQuote, setSavedQuote] = useState<QuoteWithDetails | null>(null);
   const [form, setForm]       = useState<FormState>({
     client_id: '', title: '', currency: 'JMD',
     validity_days: 14, notes: '', deposit: '50% upfront',
@@ -53,6 +57,43 @@ export default function CreateQuotePage() {
   useEffect(() => {
     templatesApi.list().then(setTemplates).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!editId) return;
+    setLoadingQuote(true);
+    quotesApi.get(editId)
+      .then(q => {
+        if (q.status !== 'draft') {
+          toast('Only draft quotes can be edited.', 'warning');
+          navigate('/app/quotes');
+          return;
+        }
+        setForm({
+          client_id: q.client_id,
+          title: q.title,
+          currency: q.currency as Currency,
+          validity_days: q.validity_days,
+          notes: q.notes ?? '',
+          deposit: q.deposit ?? '50% upfront',
+          payment_method: q.payment_method ?? 'Bank Transfer',
+          delivery_timeline: q.delivery_timeline ?? '10 business days',
+          revisions: q.revisions ?? '2 rounds',
+          tax_exempt: q.tax_exempt,
+          tax_rate: q.tax_rate,
+          require_signature: q.require_signature,
+          track_views: q.track_views,
+          send_reminder: q.send_reminder,
+        });
+        setItems((q.line_items && q.line_items.length > 0)
+          ? q.line_items.map(li => ({ description: li.description, quantity: li.quantity, unit_price: li.unit_price }))
+          : [{ description: '', quantity: 1, unit_price: 0 }]);
+      })
+      .catch(() => {
+        toast('Quote not found.', 'warning');
+        navigate('/app/quotes');
+      })
+      .finally(() => setLoadingQuote(false));
+  }, [editId, navigate, toast]);
 
   const applyTemplate = (tpl: QuoteTemplate) => {
     setForm(prev => ({
@@ -84,35 +125,95 @@ export default function CreateQuotePage() {
 
   const client = clients.find(c => c.id === form.client_id);
 
-  const handleSend = async () => {
+  const handleSave = async () => {
     setLoading(true);
     try {
-      await quotesApi.create({ ...form, line_items: items });
-      toast('✅ Quote created!', 'success');
-      navigate('/app/quotes');
+      if (isEdit && editId) {
+        const updated = await quotesApi.update(editId, {
+          title: form.title,
+          currency: form.currency,
+          validity_days: form.validity_days,
+          notes: form.notes,
+          deposit: form.deposit,
+          payment_method: form.payment_method,
+          delivery_timeline: form.delivery_timeline,
+          revisions: form.revisions,
+          tax_exempt: form.tax_exempt,
+          tax_rate: form.tax_rate,
+          require_signature: form.require_signature,
+          track_views: form.track_views,
+          send_reminder: form.send_reminder,
+          line_items: items,
+        });
+        setSavedQuote(updated);
+        toast('✅ Quote updated!', 'success');
+      } else {
+        await quotesApi.create({ ...form, line_items: items });
+        toast('✅ Quote created!', 'success');
+        navigate('/app/quotes');
+      }
     } catch (e) {
       if (isFreeTierLimitError(e)) {
         setShowUpgradeModal(true);
       } else {
-        toast(e instanceof Error ? e.message : 'Failed to create quote', 'warning');
+        toast(e instanceof Error ? e.message : 'Failed to save quote', 'warning');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleResend = async (channel: 'email' | 'link') => {
+    if (!editId || !savedQuote) return;
+    try {
+      const res = await quotesApi.send(editId, {
+        channel,
+        recipient_email: channel === 'email' ? savedQuote.client?.email : undefined,
+      });
+      if (channel === 'link' && res.quote_link) {
+        await copyToClipboard(res.quote_link);
+        toast('🔗 Link copied!', 'success');
+      } else if (channel === 'email') {
+        toast('✅ Quote sent via email!', 'success');
+      }
+      setSavedQuote(null);
+      navigate('/app/quotes');
+    } catch {
+      toast('Failed to send quote.', 'warning');
+    }
+  };
+
+  if (isEdit && loadingQuote) {
+    return (
+      <>
+        <Topbar title="Edit Quote" actions={<button className="btn btn-ghost" onClick={() => navigate('/app/quotes')}>Cancel</button>} />
+        <div className="page-body" style={{ textAlign: 'center', padding: 80, color: 'var(--muted)' }}>Loading quote…</div>
+      </>
+    );
+  }
+
   return (
     <>
       <Topbar
-        title="New Quote"
+        title={isEdit ? 'Edit Quote' : 'New Quote'}
         actions={
           <>
-            <button className="btn btn-outline" onClick={() => toast('Draft saved', 'info')}>Save Draft</button>
+            {!isEdit && <button className="btn btn-outline" onClick={() => toast('Draft saved', 'info')}>Save Draft</button>}
             <button className="btn btn-ghost" onClick={() => navigate('/app/quotes')}>Cancel</button>
           </>
         }
       />
       <div className="page-body">
+      {savedQuote && (
+        <div style={{ marginBottom: 20, padding: 20, background: 'rgba(45,171,111,.1)', border: '1px solid var(--success)', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontWeight: 600, color: 'var(--success)' }}>Quote updated. Re-send to {savedQuote.client?.name ?? 'client'}?</div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button className="btn btn-success btn-sm" onClick={() => void handleResend('email')}>📧 Send via Email</button>
+            <button className="btn btn-outline btn-sm" onClick={() => void handleResend('link')}>🔗 Copy Link</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => { setSavedQuote(null); navigate('/app/quotes'); }}>Done</button>
+          </div>
+        </div>
+      )}
         <div className="flow-wrap">
           {/* Stepper */}
           <div className="stepper">
@@ -138,7 +239,7 @@ export default function CreateQuotePage() {
             <div className="flow-card">
               <div className="flow-title">Who is this quote for?</div>
               <div className="flow-sub">Select an existing client or enter details manually.</div>
-              {templates.length > 0 && (
+              {!isEdit && templates.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 8 }}>Start from Template</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -263,8 +364,8 @@ export default function CreateQuotePage() {
           {/* Step 4: Review */}
           {step === 4 && (
             <div className="flow-card">
-              <div className="flow-title">Review &amp; Send</div>
-              <div className="flow-sub">Everything looks good? Send your quote.</div>
+              <div className="flow-title">{isEdit ? 'Review &amp; Save' : 'Review &amp; Send'}</div>
+              <div className="flow-sub">{isEdit ? 'Review your changes and save.' : 'Everything looks good? Send your quote.'}</div>
 
               <div className="review-section">
                 <div className="review-section-title">Quote Summary</div>
@@ -280,8 +381,8 @@ export default function CreateQuotePage() {
 
               <div className="flow-foot">
                 <button className="btn btn-outline" onClick={() => setStep(3)}>← Back</button>
-                <button className="btn btn-success" onClick={() => void handleSend()} disabled={loading}>
-                  {loading ? 'Creating…' : 'Create Quote ✓'}
+                <button className="btn btn-success" onClick={() => void handleSave()} disabled={loading}>
+                  {loading ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes ✓' : 'Create Quote ✓')}
                 </button>
               </div>
             </div>
