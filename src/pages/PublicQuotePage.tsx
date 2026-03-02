@@ -88,13 +88,14 @@ export default function PublicQuotePage() {
     }
   };
 
-  const handlePay = async (processor?: PaymentProcessor) => {
+  const handlePay = async (processor?: PaymentProcessor, overrideType?: 'full' | 'deposit' | 'balance') => {
     if (!token || !quote) return;
     setPaymentError('');
     setPaymentLoading(processor ?? 'default');
+    const payType = overrideType ?? paymentType;
     try {
       const result = await publicApi.createPaymentLink(token, {
-        payment_type: paymentType,
+        payment_type: payType,
         ...(processor ? { processor } : {}),
       });
       if (result.payment_url) {
@@ -149,8 +150,12 @@ export default function PublicQuotePage() {
   const items = quote.line_items ?? [];
   const accent = quote.creator?.brand_color || 'var(--accent)';
   const processors = quote.payment_processors ?? [];
-  const hasPaymentSection = processors.length > 0 && (accepted || quote.status === 'accepted');
+  const isFullyPaid = !!(quote.fully_paid_at || quote.paid_at);
+  const isDepositPaid = !!quote.deposit_paid_at;
+  const hasPaymentSection = processors.length > 0 && (accepted || quote.status === 'accepted') && !isFullyPaid;
+  const showBalancePayment = hasPaymentSection && isDepositPaid;
   const depositAmount = calcDepositAmount(quote.deposit || '50%', quote.total);
+  const balanceAmount = Math.round((quote.total - depositAmount) * 100) / 100;
   const isUsd = quote.currency === 'USD';
 
   // Expiry countdown
@@ -209,69 +214,91 @@ export default function PublicQuotePage() {
           ✅ You have accepted this quote. The freelancer has been notified.
         </div>
       )}
-      {hasPaymentSection && (
+      {isFullyPaid && (
+        <div className="modal" style={{ maxWidth: 760, margin: '0 auto 24px', padding: 24, textAlign: 'center' }}>
+          <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
+          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Payment complete</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)' }}>
+            Thank you. Your payment of {formatCurrency(quote.total, quote.currency)} has been received by {businessName}.
+          </div>
+        </div>
+      )}
+      {hasPaymentSection && !isFullyPaid && (
         <div className="modal" style={{ maxWidth: 760, margin: '0 auto 24px', padding: 24 }}>
-          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>✓ Quote accepted! Time to pay.</div>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>How much would you like to pay now?</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: 12, background: paymentType === 'deposit' ? 'var(--cream)' : 'transparent', borderRadius: 8, border: '1px solid ' + (paymentType === 'deposit' ? 'var(--accent)' : 'var(--border)') }}>
-                <input type="radio" name="pay_type" checked={paymentType === 'deposit'} onChange={() => setPaymentType('deposit')} />
-                <span>Pay deposit only</span>
-                <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(depositAmount, quote.currency)}</span>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>({quote.deposit || '50%'} upfront)</span>
-              </label>
-              <label
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: 12,
-                  background: paymentType === 'full' ? 'var(--cream)' : 'transparent',
-                  borderRadius: 8,
-                  border: '1px solid ' + (paymentType === 'full' ? 'var(--accent)' : 'var(--border)'),
-                }}
-              >
-                <input type="radio" name="pay_type" checked={paymentType === "full"} onChange={() => setPaymentType("full")} />
-                <span>Pay full amount</span>
-                <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(quote.total, quote.currency)}</span>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>(saves follow-up)</span>
-              </label>
-            </div>
-          </div>
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 16 }}>
-            {processors.includes('wipay') && (
-              <button
-                className="btn btn-dark"
-                style={{ width: '100%', marginBottom: 10 }}
-                onClick={() => void handlePay('wipay')}
-                disabled={!!paymentLoading}
-              >
-                {paymentLoading === 'wipay' ? 'Redirecting…' : 'Pay with WiPay →'}
-              </button>
-            )}
-            {processors.includes('stripe') && isUsd && (
-              <button
-                className="btn btn-dark"
-                style={{ width: '100%', marginBottom: 10 }}
-                onClick={() => void handlePay('stripe')}
-                disabled={!!paymentLoading}
-              >
-                {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay with Stripe →'}
-              </button>
-            )}
-            {processors.includes('paypal') && isUsd && (
-              <button
-                className="btn btn-dark"
-                style={{ width: '100%', marginBottom: 10 }}
-                onClick={() => void handlePay('paypal')}
-                disabled={!!paymentLoading}
-              >
-                {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay with PayPal →'}
-              </button>
-            )}
-          </div>
-          {paymentError && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{paymentError}</div>}
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            Prefer to pay by bank transfer or cash? Ask {businessName} to mark as paid once received.
-          </div>
+          {showBalancePayment ? (
+            <>
+              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Deposit paid ✓</div>
+              <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16 }}>
+                Pay the remaining balance of {formatCurrency(balanceAmount, quote.currency)} when work is complete.
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {processors.includes('wipay') && (
+                  <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('wipay', 'balance')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'wipay' ? 'Redirecting…' : 'Pay balance with WiPay →'}
+                  </button>
+                )}
+                {processors.includes('stripe') && isUsd && (
+                  <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('stripe', 'balance')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay balance with Stripe →'}
+                  </button>
+                )}
+                {processors.includes('paypal') && isUsd && (
+                  <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('paypal', 'balance')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay balance with PayPal →'}
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>✓ Quote accepted! Time to pay.</div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>How much would you like to pay now?</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: 12, background: paymentType === 'deposit' ? 'var(--cream)' : 'transparent', borderRadius: 8, border: '1px solid ' + (paymentType === 'deposit' ? 'var(--accent)' : 'var(--border)') }}>
+                    <input type="radio" name="pay_type" checked={paymentType === 'deposit'} onChange={() => setPaymentType('deposit')} />
+                    <span>Pay deposit only</span>
+                    <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(depositAmount, quote.currency)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>({quote.deposit || '50%'} upfront)</span>
+                  </label>
+                  <label
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: 12,
+                      background: paymentType === 'full' ? 'var(--cream)' : 'transparent',
+                      borderRadius: 8,
+                      border: '1px solid ' + (paymentType === 'full' ? 'var(--accent)' : 'var(--border)'),
+                    }}
+                  >
+                    <input type="radio" name="pay_type" checked={paymentType === "full"} onChange={() => setPaymentType("full")} />
+                    <span>Pay full amount</span>
+                    <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(quote.total, quote.currency)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>(saves follow-up)</span>
+                  </label>
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 16 }}>
+                {processors.includes('wipay') && (
+                  <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('wipay')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'wipay' ? 'Redirecting…' : 'Pay with WiPay →'}
+                  </button>
+                )}
+                {processors.includes('stripe') && isUsd && (
+                  <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('stripe')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay with Stripe →'}
+                  </button>
+                )}
+                {processors.includes('paypal') && isUsd && (
+                  <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('paypal')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay with PayPal →'}
+                  </button>
+                )}
+              </div>
+              {paymentError && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{paymentError}</div>}
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                Prefer to pay by bank transfer or cash? Ask {businessName} to mark as paid once received.
+              </div>
+            </>
+          )}
         </div>
       )}
       <div className="modal" style={{ maxWidth: 760, margin: '0 auto' }}>
