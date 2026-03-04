@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { usePayments } from '@/hooks/usePayments';
 import { useProfile } from '@/hooks/useProfile';
 import { useAppToast } from '@/components/layout/ToastProvider';

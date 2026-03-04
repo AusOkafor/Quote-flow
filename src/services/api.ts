@@ -72,7 +72,7 @@ export const apiKeysApi = {
 export const billingApi = {
   createCheckoutSession: (data: { plan: string; interval: string }) =>
     post<{ url: string }>('/billing/create-checkout-session', data),
-  createPortalSession: () => post<{ url: string }>('/billing/portal'),
+  createPortalSession: () => post<{ url: string }>('/billing/portal', {}),
 };
 
 export const userApi = {
