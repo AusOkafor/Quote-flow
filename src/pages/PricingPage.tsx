@@ -6,7 +6,7 @@ const PLANS = [
   {
     tier: 'Free',
     monthly: 0, annual: 0,
-    features: ['3 quotes per month', 'Basic templates', 'WhatsApp sharing', 'PDF export', 'Email support'],
+    features: ['3 quotes per month', 'Basic templates', 'WhatsApp sharing', 'CSV export', 'Email support'],
     featured: false,
   },
   {

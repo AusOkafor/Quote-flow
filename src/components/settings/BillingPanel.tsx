@@ -26,6 +26,20 @@ export default function BillingPanel() {
     }
   }, [toast, refreshProfile]);
 
+  const handleManageBilling = async () => {
+    setLoading('portal');
+    try {
+      const { url } = await billingApi.createPortalSession();
+      if (url) window.location.href = url;
+      else toast('Could not open billing portal', 'warning');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to open billing portal';
+      toast(msg.includes('no billing') ? 'Subscribe to a plan first.' : msg, 'warning');
+    } finally {
+      setLoading(null);
+    }
+  };
+
   const handleUpgrade = async (targetPlan: 'pro' | 'business', interval: 'monthly' | 'annual') => {
     setLoading(`${targetPlan}-${interval}`);
     try {
@@ -72,6 +86,13 @@ export default function BillingPanel() {
           ))}
         </div>
       </div>
+      {(plan === 'pro' || plan === 'business') && (
+        <div style={{ background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 24 }}>
+          <button className="btn btn-outline" disabled={!!loading} onClick={() => void handleManageBilling()}>
+            {loading === 'portal' ? 'Opening…' : 'Manage subscription & payment method'}
+          </button>
+        </div>
+      )}
       {(plan === 'free' || plan === 'pro') && (
         <div style={{ background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 14, padding: 20 }}>
           <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>

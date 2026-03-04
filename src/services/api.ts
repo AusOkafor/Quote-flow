@@ -4,7 +4,7 @@ import type {
   DashboardStats, Profile, Quote, QuoteWithDetails, SendQuoteRequest,
   UnreadClientMessage, Team, TeamMember,
   PaymentAccount, Payment, CreatePaymentLinkRequest, PaymentLinkResponse,
-  ConnectWiPayRequest, PaymentProcessor,
+  PaymentProcessor,
 } from '@/types';
 
 const BASE = (import.meta.env.VITE_API_BASE_URL as string) ?? 'https://quote-service-p3fq.onrender.com';
@@ -72,6 +72,7 @@ export const apiKeysApi = {
 export const billingApi = {
   createCheckoutSession: (data: { plan: string; interval: string }) =>
     post<{ url: string }>('/billing/create-checkout-session', data),
+  createPortalSession: () => post<{ url: string }>('/billing/portal'),
 };
 
 export const userApi = {
@@ -162,7 +163,6 @@ export const paymentsApi = {
   listAccounts: () => get<PaymentAccount[]>('/payments/accounts'),
   connectStripe: () => post<{ url: string }>('/payments/connect/stripe', {}),
   connectPayPal: () => post<{ url: string }>('/payments/connect/paypal', {}),
-  connectWiPay: (body: ConnectWiPayRequest) => post<{ status: string }>('/payments/connect/wipay', body),
   disconnect: (processor: PaymentProcessor) => req<void>(`/payments/disconnect/${processor}`, { method: 'DELETE' }),
   createLink: (body: CreatePaymentLinkRequest) => post<PaymentLinkResponse>('/payments/create-link', body),
   listPayments: () => get<Payment[]>('/payments/history'),

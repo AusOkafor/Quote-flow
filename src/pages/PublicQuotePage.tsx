@@ -232,12 +232,7 @@ export default function PublicQuotePage() {
                 Pay the remaining balance of {formatCurrency(balanceAmount, quote.currency)} when work is complete.
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {processors.includes('wipay') && (
-                  <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('wipay', 'balance')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'wipay' ? 'Redirecting…' : 'Pay balance with WiPay →'}
-                  </button>
-                )}
-                {processors.includes('stripe') && isUsd && (
+                {processors.includes('stripe') && (
                   <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('stripe', 'balance')} disabled={!!paymentLoading}>
                     {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay balance with Stripe →'}
                   </button>
@@ -277,12 +272,7 @@ export default function PublicQuotePage() {
                 </div>
               </div>
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 16 }}>
-                {processors.includes('wipay') && (
-                  <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('wipay')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'wipay' ? 'Redirecting…' : 'Pay with WiPay →'}
-                  </button>
-                )}
-                {processors.includes('stripe') && isUsd && (
+                {processors.includes('stripe') && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('stripe')} disabled={!!paymentLoading}>
                     {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay with Stripe →'}
                   </button>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { paymentsApi } from '@/services/api';
-import type { PaymentAccount, ConnectWiPayRequest, PaymentProcessor } from '@/types';
+import type { PaymentAccount, PaymentProcessor } from '@/types';
 
 export function usePayments() {
   const [accounts, setAccounts] = useState<PaymentAccount[]>([]);
@@ -20,12 +20,6 @@ export function usePayments() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const connectWiPay = async (body: ConnectWiPayRequest) => {
-    await paymentsApi.connectWiPay(body);
-    const updated = await paymentsApi.listAccounts();
-    setAccounts(updated ?? []);
-  };
 
   const connectStripe = async () => {
     const { url } = await paymentsApi.connectStripe();
@@ -48,7 +42,6 @@ export function usePayments() {
   return {
     accounts,
     loading,
-    connectWiPay,
     connectStripe,
     connectPayPal,
     disconnect,

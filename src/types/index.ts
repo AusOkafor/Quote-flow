@@ -1,5 +1,5 @@
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'expired' | 'declined';
-export type PaymentProcessor = 'wipay' | 'stripe' | 'paypal';
+export type PaymentProcessor = 'stripe' | 'paypal';
 export type PaymentType = 'full' | 'deposit' | 'balance';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type Currency    = 'JMD' | 'USD' | 'TTD' | 'BBD';
