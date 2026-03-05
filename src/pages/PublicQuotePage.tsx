@@ -242,6 +242,11 @@ export default function PublicQuotePage() {
                     {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay balance with PayPal →'}
                   </button>
                 )}
+                {processors.includes('wipay') && (
+                  <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('wipay', 'balance')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'wipay' ? 'Redirecting…' : `Pay balance with WiPay (${quote.currency}) →`}
+                  </button>
+                )}
               </div>
             </>
           ) : (
@@ -280,6 +285,11 @@ export default function PublicQuotePage() {
                 {processors.includes('paypal') && isUsd && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('paypal')} disabled={!!paymentLoading}>
                     {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay with PayPal →'}
+                  </button>
+                )}
+                {processors.includes('wipay') && (
+                  <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('wipay')} disabled={!!paymentLoading}>
+                    {paymentLoading === 'wipay' ? 'Redirecting…' : `Pay with WiPay (${quote.currency}) →`}
                   </button>
                 )}
               </div>

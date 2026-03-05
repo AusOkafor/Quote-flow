@@ -31,6 +31,11 @@ export function usePayments() {
     window.open(url, '_blank');
   };
 
+  const connectWiPay = async (data: { account_number: string; api_key: string }) => {
+    await paymentsApi.connectWiPay(data);
+    await load();
+  };
+
   const disconnect = async (processor: PaymentProcessor) => {
     await paymentsApi.disconnect(processor);
     setAccounts((prev) => prev.filter((a) => a.processor !== processor));
@@ -44,6 +49,7 @@ export function usePayments() {
     loading,
     connectStripe,
     connectPayPal,
+    connectWiPay,
     disconnect,
     isConnected,
     refresh: load,

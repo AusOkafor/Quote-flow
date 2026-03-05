@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePayments } from '@/hooks/usePayments';
 import { useProfile } from '@/hooks/useProfile';
 import { useAppToast } from '@/components/layout/ToastProvider';
@@ -12,11 +12,15 @@ interface Props {
 const PROCESSOR_LABELS: Record<PaymentProcessor, string> = {
   stripe: 'Stripe',
   paypal: 'PayPal',
+  wipay: 'WiPay',
 };
 
 export default function PaymentsPanel({ profile, onChange }: Props) {
   const toast = useAppToast();
-  const { loading, connectStripe, connectPayPal, disconnect, isConnected } = usePayments();
+  const { loading, connectStripe, connectPayPal, connectWiPay, disconnect, isConnected } = usePayments();
+  const [wipayAccountNumber, setWipayAccountNumber] = useState('');
+  const [wipayAPIKey, setWipayAPIKey] = useState('');
+  const [connectingWiPay, setConnectingWiPay] = useState(false);
   const { refresh: refreshProfile } = useProfile();
 
   useEffect(() => {
@@ -37,8 +41,31 @@ export default function PaymentsPanel({ profile, onChange }: Props) {
       toast('Stripe connection failed. Please try again.', 'warning');
       params.delete('error');
       window.history.replaceState({}, '', params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname);
+    } else if (error === 'paypal') {
+      toast('PayPal connection failed. Please try again.', 'warning');
+      params.delete('error');
+      window.history.replaceState({}, '', params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname);
     }
   }, [toast, refreshProfile]);
+
+  const handleConnectWiPay = async () => {
+    if (!wipayAccountNumber.trim() || !wipayAPIKey.trim()) return;
+    setConnectingWiPay(true);
+    try {
+      await connectWiPay({
+        account_number: wipayAccountNumber.trim(),
+        api_key: wipayAPIKey.trim(),
+      });
+      toast('WiPay connected successfully!', 'success');
+      setWipayAccountNumber('');
+      setWipayAPIKey('');
+      refreshProfile?.();
+    } catch {
+      toast('Failed to connect WiPay — check your credentials and try again', 'warning');
+    } finally {
+      setConnectingWiPay(false);
+    }
+  };
 
   const handleDisconnect = async (processor: PaymentProcessor) => {
     if (!window.confirm(`Disconnect ${PROCESSOR_LABELS[processor]}?`)) return;
@@ -85,7 +112,7 @@ export default function PaymentsPanel({ profile, onChange }: Props) {
               Disconnect
             </button>
           </div>
-        ) : (
+        ) : processor === 'wipay' ? null : (
           <button
             className="btn btn-dark"
             onClick={() => (processor === 'stripe' ? void connectStripe() : void connectPayPal())}
@@ -106,7 +133,7 @@ export default function PaymentsPanel({ profile, onChange }: Props) {
         <div className="pay-loading">Loading…</div>
       ) : (
         <div className="pay-processors">
-          {processorCard('stripe', 'Stripe', 'International & card payments · JMD, USD, TTD, BBD', undefined, '#635BFF')}
+          {processorCard('stripe', 'Stripe', 'International & card payments · USD', undefined, '#635BFF')}
           {processorCard(
             'paypal',
             'PayPal',
@@ -114,6 +141,60 @@ export default function PaymentsPanel({ profile, onChange }: Props) {
             'USD quotes only — not supported for JMD',
             '#003087',
           )}
+          {/* WiPay — Caribbean currencies (JMD, TTD, BBD) */}
+          <div
+            key="wipay"
+            className="pay-processor-card"
+            style={{ borderLeft: '4px solid #2DAB6F' }}
+          >
+            <div className="pay-processor-header">
+              <div>
+                <div className="pay-processor-title">WiPay</div>
+                <div className="pay-processor-sub">
+                  Caribbean payments · JMD, TTD, BBD — no QuoteFlow platform fee
+                </div>
+                <div className="pay-processor-note">
+                  <span className="pay-processor-note-icon">ℹ</span>
+                  Requires a registered business. Apply at{' '}
+                  <a href="https://wipayfinancial.com" target="_blank" rel="noopener noreferrer" className="link">
+                    wipayfinancial.com
+                  </a>
+                </div>
+              </div>
+              {isConnected('wipay') ? (
+                <div className="pay-processor-status">
+                  <span className="pay-processor-badge">Connected</span>
+                  <button className="btn btn-outline btn-sm" onClick={() => void handleDisconnect('wipay')}>
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <div className="pay-wipay-form">
+                  <input
+                    type="text"
+                    placeholder="WiPay account number"
+                    value={wipayAccountNumber}
+                    onChange={(e) => setWipayAccountNumber(e.target.value)}
+                    className="pay-wipay-input"
+                  />
+                  <input
+                    type="password"
+                    placeholder="WiPay API key"
+                    value={wipayAPIKey}
+                    onChange={(e) => setWipayAPIKey(e.target.value)}
+                    className="pay-wipay-input"
+                  />
+                  <button
+                    className="btn btn-dark"
+                    onClick={() => void handleConnectWiPay()}
+                    disabled={connectingWiPay || !wipayAccountNumber.trim() || !wipayAPIKey.trim()}
+                  >
+                    {connectingWiPay ? 'Connecting…' : 'Connect WiPay'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

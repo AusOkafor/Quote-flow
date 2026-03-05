@@ -163,6 +163,8 @@ export const paymentsApi = {
   listAccounts: () => get<PaymentAccount[]>('/payments/accounts'),
   connectStripe: () => post<{ url: string }>('/payments/connect/stripe', {}),
   connectPayPal: () => post<{ url: string }>('/payments/connect/paypal', {}),
+  connectWiPay: (data: { account_number: string; api_key: string }) =>
+    post<{ connected: boolean; message: string }>('/payments/connect/wipay', data),
   disconnect: (processor: PaymentProcessor) => req<void>(`/payments/disconnect/${processor}`, { method: 'DELETE' }),
   createLink: (body: CreatePaymentLinkRequest) => post<PaymentLinkResponse>('/payments/create-link', body),
   listPayments: () => get<Payment[]>('/payments/history'),

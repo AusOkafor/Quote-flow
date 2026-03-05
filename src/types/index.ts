@@ -1,5 +1,5 @@
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'expired' | 'declined';
-export type PaymentProcessor = 'stripe' | 'paypal';
+export type PaymentProcessor = 'stripe' | 'paypal' | 'wipay';
 export type PaymentType = 'full' | 'deposit' | 'balance';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type Currency    = 'JMD' | 'USD' | 'TTD' | 'BBD';
@@ -284,8 +284,8 @@ export interface PaymentAccount {
   id: string;
   processor: PaymentProcessor;
   stripe_account_id?: string;
-  wipay_account_id?: string;
   paypal_merchant_id?: string;
+  wipay_account_id?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -321,7 +321,3 @@ export interface PaymentLinkResponse {
   processor: PaymentProcessor;
 }
 
-export interface ConnectWiPayRequest {
-  account_id: string;
-  api_key: string;
-}

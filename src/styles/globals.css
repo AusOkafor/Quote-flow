@@ -324,11 +324,19 @@ textarea { resize: vertical; min-height: 88px; }
   padding: 6px 12px;
   border-radius: 8px;
 }
-.pay-processor-form {
+.pay-processor-form,
+.pay-wipay-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 280px;
+}
+.pay-wipay-input {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  font-size: 14px;
+  font-family: inherit;
 }
 .pay-input {
   padding: 12px 14px;
