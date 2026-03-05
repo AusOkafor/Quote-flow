@@ -147,6 +147,9 @@ export function isProRequiredError(e: unknown): boolean {
 
 export const publicApi = {
   getQuote:    (token: string) => req<QuoteWithDetails>(`/q/${token}`),
+  /** WiPay checkout URL — navigate directly (no API call); backend proxies WiPay HTML */
+  getWiPayCheckoutUrl: (token: string, type: 'full' | 'deposit' | 'balance') =>
+    `${BASE.replace(/\/$/, '')}/q/${token}/wipay-checkout?type=${type}`,
   acceptQuote: (token: string, signatureName?: string) =>
     req<{ accepted: boolean; quote_number: string; message: string }>(
       `/q/${token}/accept`,

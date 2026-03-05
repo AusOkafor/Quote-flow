@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount } from '@/lib/utils';
@@ -7,6 +7,7 @@ import type { QuoteWithDetails, QuoteNote, PaymentProcessor } from '@/types';
 
 export default function PublicQuotePage() {
   const { token } = useParams<{ token: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const toast = useAppToast();
   const [quote,    setQuote]    = useState<QuoteWithDetails | null>(null);
   const [loading,  setLoading]  = useState(true);
@@ -45,6 +46,19 @@ export default function PublicQuotePage() {
     if (quote?.creator?.default_payment_timing === 'full') setPaymentType('full');
     else if (quote?.creator?.default_payment_timing === 'deposit') setPaymentType('deposit');
   }, [quote?.creator?.default_payment_timing]);
+
+  // Handle payment success redirect (WiPay uses ?payment=success&processor=wipay)
+  useEffect(() => {
+    const paymentSuccess = searchParams.get('payment') === 'success';
+    if (paymentSuccess && token) {
+      publicApi.getQuote(token).then((q) => {
+        setQuote(q);
+        toast('Payment successful! Thank you.', 'success', 5000);
+        // Clear URL params so refresh doesn't re-show toast
+        setSearchParams({}, { replace: true });
+      }).catch(() => {});
+    }
+  }, [token, searchParams, toast, setSearchParams]);
 
   const loadNotes = () => {
     if (!token) return;
@@ -93,6 +107,13 @@ export default function PublicQuotePage() {
     setPaymentError('');
     setPaymentLoading(processor ?? 'default');
     const payType = overrideType ?? paymentType;
+
+    // WiPay: navigate directly to our checkout proxy (no API call)
+    if (processor === 'wipay') {
+      window.location.href = publicApi.getWiPayCheckoutUrl(token, payType);
+      return;
+    }
+
     try {
       const result = await publicApi.createPaymentLink(token, {
         payment_type: payType,

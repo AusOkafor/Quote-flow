@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import ToastProvider   from '@/components/layout/ToastProvider';
 import { DataRefreshProvider } from '@/contexts/DataRefreshContext';
@@ -15,6 +15,12 @@ import CreateQuotePage from '@/pages/CreateQuotePage';
 import ClientsPage     from '@/pages/ClientsPage';
 import SettingsPage    from '@/pages/SettingsPage';
 import type { Session } from '@supabase/supabase-js';
+
+/** WiPay redirects to /q/:token/app after payment — redirect to quote page */
+function WiPayReturn() {
+  const { token } = useParams<{ token: string }>();
+  return <Navigate to={token ? `/q/${token}` : '/'} replace />;
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -36,6 +42,7 @@ export default function App() {
         <Route path="/"         element={<LandingPage />} />
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/pricing"  element={<PricingPage />} />
+        <Route path="/q/:token/app" element={<WiPayReturn />} />
         <Route path="/q/:token" element={<PublicQuotePage />} />
         <Route path="/payment/complete" element={<PaymentCompletePage />} />
 
