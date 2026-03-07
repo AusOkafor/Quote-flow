@@ -87,6 +87,16 @@ export default function BillingPanel() {
           ))}
         </div>
       </div>
+      {plan === 'business' && (
+        <div style={{ background: 'rgba(45,171,111,.08)', border: '1px solid var(--success)', borderRadius: 14, padding: 16, marginBottom: 24, fontSize: 14, color: 'var(--text)' }}>
+          ✓ {messages.billing.whiteLabelEnabled}
+        </div>
+      )}
+      {(plan === 'free' || plan === 'pro') && (
+        <div style={{ background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 24, fontSize: 14, color: 'var(--muted)' }}>
+          {messages.billing.whiteLabelUpgrade}
+        </div>
+      )}
       {(plan === 'pro' || plan === 'business') && (
         <div style={{ background: 'var(--cream)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 24 }}>
           <button className="btn btn-outline" disabled={!!loading} onClick={() => void handleManageBilling()}>

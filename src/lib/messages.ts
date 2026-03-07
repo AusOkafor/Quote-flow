@@ -247,6 +247,8 @@ export const messages = {
     upgradeMonthly: 'Upgrade Monthly',
     upgradeAnnual: 'Upgrade Annual (save 20%)',
     securePayment: 'Secure payment via Stripe. Cancel anytime.',
+    whiteLabelEnabled: 'White-label quotes enabled — QuoteFlow branding is hidden from your clients.',
+    whiteLabelUpgrade: 'Upgrade to Business to remove QuoteFlow branding from your quotes, emails and PDFs.',
   },
 
   // ─── QUOTES PAGE ──────────────────────────────────────────

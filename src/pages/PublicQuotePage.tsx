@@ -202,7 +202,10 @@ export default function PublicQuotePage() {
         heightLeft -= pageHeight;
       }
 
-      const fileName = `QuoteFlow-${quote.quote_number}-${(quote.client?.name ?? 'quote').replace(/\s+/g, '-')}.pdf`;
+      const baseName = quote.creator?.white_label
+        ? (quote.creator?.business_name || 'Quote').replace(/\s+/g, '-')
+        : 'QuoteFlow';
+      const fileName = `${baseName}-${quote.quote_number}-${(quote.client?.name ?? 'quote').replace(/\s+/g, '-')}.pdf`;
       pdf.save(fileName);
     } catch (err) {
       console.error('PDF generation failed:', err);
@@ -608,6 +611,11 @@ export default function PublicQuotePage() {
         </div>
         </div>
       </div>
+      {!quote.creator?.white_label && (
+        <div className="powered-by-footer" style={{ textAlign: 'center', padding: '24px 16px', fontSize: 13, color: 'var(--muted)' }}>
+          Powered by <a href="https://quoteflow.app" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>QuoteFlow</a>
+        </div>
+      )}
     </div>
   );
 }

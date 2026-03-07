@@ -145,6 +145,7 @@ export interface QuoteWithDetails extends Quote {
     business_name?: string;
     brand_color?: string;
     white_label?: boolean;
+    freelancer_plan?: string;
     default_payment_timing?: 'full' | 'deposit' | 'link_only';
   };
   payment_processors?: PaymentProcessor[];
