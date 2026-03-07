@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { copyToClipboard } from '@/lib/utils';
+import { copyToClipboard, formatCurrency, formatDateLong, quotePublicUrl } from '@/lib/utils';
 import type { Quote, SendChannel } from '@/types';
 
 interface Props {
@@ -17,6 +17,15 @@ const CHANNELS: { value: SendChannel; icon: string; title: string; sub: string }
   { value: 'link',     icon: '🔗', title: 'Copy Link',  sub: 'Share a public link' },
 ];
 
+/** Strip non-digits; if starts with 0, replace with Jamaica country code 876. */
+function normalizePhoneForWaMe(input: string): string {
+  const digits = input.replace(/\D/g, '');
+  if (digits.startsWith('0')) {
+    return '876' + digits.slice(1);
+  }
+  return digits;
+}
+
 export default function SendModal({ quoteId, quote, open, onClose, onSend }: Props) {
   const [channel,  setChannel]  = useState<SendChannel>('email');
   const [email,    setEmail]    = useState('');
@@ -32,8 +41,32 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend }: Pro
     if (!open) setError(null);
   }, [open, quote?.client?.email, quote?.client?.phone]);
 
+  const handleWhatsAppSend = () => {
+    if (!quote?.share_token) return;
+    const quoteURL = quotePublicUrl(quote.share_token);
+    const clientName = quote.client?.name || 'there';
+    const message = encodeURIComponent(
+      `Hi ${clientName},\n\n` +
+      `I've sent you a quote for *${quote.title}*.\n\n` +
+      `💰 Total: ${formatCurrency(quote.total, quote.currency)}\n` +
+      `📅 Valid until: ${formatDateLong(quote.expires_at)}\n\n` +
+      `View and accept your quote here:\n${quoteURL}\n\n` +
+      `Let me know if you have any questions.`
+    );
+    const normalizedPhone = normalizePhoneForWaMe(phone);
+    const waURL = normalizedPhone
+      ? `https://wa.me/${normalizedPhone}?text=${message}`
+      : `https://wa.me/?text=${message}`;
+    window.open(waURL, '_blank');
+    onClose();
+  };
+
   const handleSend = async () => {
     if (!quoteId) return;
+    if (channel === 'whatsapp') {
+      handleWhatsAppSend();
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
