@@ -29,7 +29,7 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     console.log('[Logo] file selected:', file.name);
-    e.target.value = '';
+    e.target.value = ''; // reset so same file can be selected again
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
       onError?.('Please use PNG, JPG, or SVG (max 2MB).');
@@ -53,7 +53,10 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
       const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true });
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
-      onChange({ logo_url: publicUrl });
+      // Cache-bust so browser loads the new image (same path = cached old image)
+      const logoUrl = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      console.log('[Logo] upload success, url:', logoUrl);
+      onChange({ logo_url: logoUrl });
     } catch (err) {
       console.error('[Logo] upload failed:', err);
       onError?.(err instanceof Error ? err.message : 'Upload failed.');
