@@ -19,7 +19,8 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleLogoClick = () => {
+  const handleReplaceLogo = () => {
+    console.log('[Logo] replace clicked');
     if (uploading) return;
     inputRef.current?.click();
   };
@@ -27,6 +28,7 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    console.log('[Logo] file selected:', file.name);
     e.target.value = '';
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -53,13 +55,17 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
       const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
       onChange({ logo_url: publicUrl });
     } catch (err) {
+      console.error('[Logo] upload failed:', err);
       onError?.(err instanceof Error ? err.message : 'Upload failed.');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleRemoveLogo = () => onChange({ logo_url: null });
+  const handleRemoveLogo = () => {
+    console.log('[Logo] remove clicked');
+    onChange({ logo_url: null });
+  };
   const isPro = profile.plan === 'pro' || profile.plan === 'business';
 
   return (
@@ -128,7 +134,7 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, opacity: isPro ? 1 : 0.6 }}>
             <img src={profile.logo_url} alt="Logo" style={logoStyles.settings} />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="btn btn-outline btn-sm" onClick={handleLogoClick} disabled={uploading || !isPro}>
+              <button type="button" className="btn btn-outline btn-sm" onClick={handleReplaceLogo} disabled={uploading || !isPro}>
                 {uploading ? 'Uploading…' : 'Replace'}
               </button>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => isPro && handleRemoveLogo()} style={{ color: 'var(--danger)' }} disabled={!isPro}>
@@ -139,10 +145,10 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
         ) : (
           <div
             className="logo-upload"
-            onClick={() => isPro && handleLogoClick()}
+            onClick={() => isPro && handleReplaceLogo()}
             role="button"
             tabIndex={isPro ? 0 : -1}
-            onKeyDown={e => isPro && e.key === 'Enter' && handleLogoClick()}
+            onKeyDown={e => isPro && e.key === 'Enter' && handleReplaceLogo()}
             style={{ opacity: isPro ? 1 : 0.6, cursor: isPro ? 'pointer' : 'not-allowed' }}
             title={!isPro ? 'Upgrade to Pro to add your logo' : undefined}
           >
