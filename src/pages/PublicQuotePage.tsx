@@ -383,7 +383,7 @@ export default function PublicQuotePage() {
         <div id="quote-content">
           <div className="qp-wrap" style={{ ['--quote-accent']: accent } as React.CSSProperties}>
             <div className="qp-top">
-              <div className="freelancer-logo-container" style={{ minWidth: 220, maxWidth: 220 }}>
+              <div className="freelancer-logo-container" style={{ minWidth: 260, maxWidth: 260 }}>
                 {quote.creator?.logo_url ? (
                 <>
                   <img
@@ -391,12 +391,12 @@ export default function PublicQuotePage() {
                     alt={quote.creator?.business_name || ''}
                     className="freelancer-logo"
                     style={{
-                      height: isGeneratingPDF ? '64px' : '72px',
-                      maxWidth: isGeneratingPDF ? '200px' : '220px',
+                      height: isGeneratingPDF ? '100px' : '90px',
+                      maxWidth: isGeneratingPDF ? '280px' : '260px',
                       width: 'auto',
                       objectFit: 'contain',
                       display: 'block',
-                      marginBottom: 8,
+                      marginBottom: '8px',
                     }}
                   />
                 </>

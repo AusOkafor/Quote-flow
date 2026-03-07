@@ -5,24 +5,27 @@
 export const logoStyles = {
   /** Nav header (when user logo appears) */
   nav: {
-    height: '32px',
-    maxWidth: '120px',
+    height: '36px',
+    maxWidth: '140px',
     width: 'auto',
     objectFit: 'contain' as const,
+    display: 'block' as const,
   },
   /** Public quote page header */
   publicQuote: {
-    height: '48px',
-    maxWidth: '180px',
+    height: '90px',
+    maxWidth: '260px',
     width: 'auto',
     objectFit: 'contain' as const,
+    display: 'block' as const,
   },
   /** Quote PDF output */
   pdf: {
-    height: '64px',
-    maxWidth: '200px',
+    height: '100px',
+    maxWidth: '280px',
     width: 'auto',
     objectFit: 'contain' as const,
+    display: 'block' as const,
   },
   /** Email templates (backend) */
   email: {
@@ -30,6 +33,7 @@ export const logoStyles = {
     maxWidth: '150px',
     width: 'auto',
     objectFit: 'contain' as const,
+    display: 'block' as const,
   },
   /** Settings preview */
   settings: {
@@ -37,5 +41,6 @@ export const logoStyles = {
     maxWidth: '180px',
     width: 'auto',
     objectFit: 'contain' as const,
+    display: 'block' as const,
   },
 } as const;
