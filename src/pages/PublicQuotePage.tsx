@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount } from '@/lib/utils';
+import { messages } from '@/lib/messages';
 import type { QuoteWithDetails, QuoteNote, PaymentProcessor } from '@/types';
 
 export default function PublicQuotePage() {
@@ -36,7 +37,7 @@ export default function PublicQuotePage() {
         setQuote(q);
         setNoteName(q.client?.name ?? '');
       })
-      .catch(() => setError('This quote link is invalid or has expired.'))
+      .catch(() => setError(messages.publicQuote.invalidLink))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -56,7 +57,7 @@ export default function PublicQuotePage() {
     if (paymentSuccess && token) {
       publicApi.getQuote(token).then((q) => {
         setQuote(q);
-        toast('Payment successful! Thank you.', 'success', 5000);
+        toast(messages.toast.paymentSuccessThankYou, 'success', 5000);
         // Clear URL params so refresh doesn't re-show toast
         setSearchParams({}, { replace: true });
       }).catch(() => {});
@@ -75,9 +76,9 @@ export default function PublicQuotePage() {
       await publicApi.postNote(token, { name: noteName.trim(), message: noteMsg.trim() });
       setNoteMsg('');
       loadNotes();
-      toast('Message sent. The freelancer will be notified.', 'success');
+      toast(messages.publicQuote.messageSent, 'success');
     } catch {
-      toast('Could not send message. Please try again.', 'warning');
+      toast(messages.publicQuote.couldNotSend, 'warning');
     } finally {
       setPostingNote(false);
     }
@@ -97,9 +98,9 @@ export default function PublicQuotePage() {
       loadNotes();
       const updated = await publicApi.getQuote(token);
       setQuote(updated);
-      toast('Change request sent. The freelancer will be notified and can update the quote.', 'success', 5000);
+      toast(messages.publicQuote.changeRequestSent, 'success', 5000);
     } catch {
-      toast('Could not send request. Please try again.', 'warning');
+      toast(messages.publicQuote.couldNotRequest, 'warning');
     } finally {
       setPostingChangeRequest(false);
     }
@@ -126,9 +127,9 @@ export default function PublicQuotePage() {
         window.location.href = result.payment_url;
         return;
       }
-      setPaymentError('Payment link failed. Please try again or pay manually.');
+      setPaymentError(messages.publicQuote.paymentLinkFailed);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Payment link failed. Please try again or pay manually.';
+      const msg = e instanceof Error ? e.message : messages.publicQuote.paymentLinkFailed;
       setPaymentError(msg);
     } finally {
       setPaymentLoading(null);
@@ -138,7 +139,7 @@ export default function PublicQuotePage() {
   const handleAccept = async () => {
     if (!token) return;
     if (quote?.require_signature && !signatureName.trim()) {
-      alert('Please type your full name to sign and accept this quote.');
+      alert(messages.toast.signToAccept);
       return;
     }
     setAccepting(true);
@@ -146,7 +147,7 @@ export default function PublicQuotePage() {
       await publicApi.acceptQuote(token, signatureName.trim() || undefined);
       setAccepted(true);
       if (quote) setQuote({ ...quote, status: 'accepted', accepted_by_name: signatureName.trim() || quote.accepted_by_name });
-      toast('🎉 Quote accepted! The freelancer has been notified.', 'success', 5000);
+      toast(messages.toast.quoteAcceptedNotify, 'success', 5000);
     } catch {
       // Network/timeout/CORS can cause fetch to fail even when the backend succeeded (e.g. Render cold start).
       // Refetch the quote to see if it was actually accepted.
@@ -155,13 +156,13 @@ export default function PublicQuotePage() {
         if (updated.status === 'accepted') {
           setAccepted(true);
           setQuote(updated);
-          toast('🎉 Quote accepted! The freelancer has been notified.', 'success', 5000);
+          toast(messages.toast.quoteAcceptedNotify, 'success', 5000);
           return;
         }
       } catch {
         /* ignore refetch errors */
       }
-      alert('Could not accept quote. It may have already been accepted or expired.');
+      alert(messages.toast.couldNotAccept);
     } finally {
       setAccepting(false);
     }
@@ -205,13 +206,13 @@ export default function PublicQuotePage() {
       pdf.save(fileName);
     } catch (err) {
       console.error('PDF generation failed:', err);
-      toast('Failed to generate PDF', 'warning');
+      toast(messages.toast.pdfFailed, 'warning');
     } finally {
       setIsGeneratingPDF(false);
     }
   };
 
-  if (loading) return <div className="public-viewer" style={{ textAlign: 'center', paddingTop: 120, fontFamily: 'Syne' }}>Loading quote…</div>;
+  if (loading) return <div className="public-viewer" style={{ textAlign: 'center', paddingTop: 120, fontFamily: 'Syne' }}>{messages.loading.loadingQuote}</div>;
   if (error)   return <div className="public-viewer" style={{ textAlign: 'center', paddingTop: 120, color: 'var(--danger)' }}>{error}</div>;
   if (!quote)  return null;
 
@@ -279,15 +280,15 @@ export default function PublicQuotePage() {
     <div className="public-viewer">
       {accepted && (
         <div className="accepted-banner" style={{ maxWidth: 760, margin: '0 auto 24px' }}>
-          ✅ You have accepted this quote. The freelancer has been notified.
+          {messages.publicQuote.acceptedBanner}
         </div>
       )}
       {isFullyPaid && (
         <div className="modal" style={{ maxWidth: 760, margin: '0 auto 24px', padding: 24, textAlign: 'center' }}>
           <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
-          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Payment complete</div>
+          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{messages.publicQuote.paymentComplete}</div>
           <div style={{ fontSize: 14, color: 'var(--muted)' }}>
-            Thank you. Your payment of {formatCurrency(quote.total, quote.currency)} has been received by {businessName}.
+            {messages.publicQuote.paymentThankYou(formatCurrency(quote.total, quote.currency), businessName)}
           </div>
         </div>
       )}
@@ -295,37 +296,37 @@ export default function PublicQuotePage() {
         <div className="modal" style={{ maxWidth: 760, margin: '0 auto 24px', padding: 24 }}>
           {showBalancePayment ? (
             <>
-              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Deposit paid ✓</div>
+              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{messages.publicQuote.depositPaidStatus} ✓</div>
               <div style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16 }}>
-                Pay the remaining balance of {formatCurrency(balanceAmount, quote.currency)} when work is complete.
+                {messages.publicQuote.balanceDue(formatCurrency(balanceAmount, quote.currency))}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {processors.includes('stripe') && (
                   <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('stripe', 'balance')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay balance with Stripe →'}
+                    {paymentLoading === 'stripe' ? messages.loading.redirecting : messages.publicQuote.payBalanceWithStripe}
                   </button>
                 )}
                 {processors.includes('paypal') && isUsd && (
                   <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('paypal', 'balance')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay balance with PayPal →'}
+                    {paymentLoading === 'paypal' ? messages.loading.redirecting : messages.publicQuote.payBalanceWithPayPal}
                   </button>
                 )}
                 {processors.includes('wipay') && (
                   <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('wipay', 'balance')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'wipay' ? 'Redirecting…' : `Pay balance with WiPay (${quote.currency}) →`}
+                    {paymentLoading === 'wipay' ? messages.loading.redirecting : messages.publicQuote.payBalanceWithWiPay(quote.currency)}
                   </button>
                 )}
               </div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>✓ Quote accepted! Time to pay.</div>
+              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>{messages.publicQuote.acceptedTimeToPay}</div>
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>How much would you like to pay now?</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{messages.publicQuote.howMuchToPay}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: 12, background: paymentType === 'deposit' ? 'var(--cream)' : 'transparent', borderRadius: 8, border: '1px solid ' + (paymentType === 'deposit' ? 'var(--accent)' : 'var(--border)') }}>
                     <input type="radio" name="pay_type" checked={paymentType === 'deposit'} onChange={() => setPaymentType('deposit')} />
-                    <span>Pay deposit only</span>
+                    <span>{messages.publicQuote.payDepositOnly}</span>
                     <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(depositAmount, quote.currency)}</span>
                     <span style={{ fontSize: 12, color: 'var(--muted)' }}>({quote.deposit || '50%'} upfront)</span>
                   </label>
@@ -338,7 +339,7 @@ export default function PublicQuotePage() {
                     }}
                   >
                     <input type="radio" name="pay_type" checked={paymentType === "full"} onChange={() => setPaymentType("full")} />
-                    <span>Pay full amount</span>
+                    <span>{messages.publicQuote.payFullAmount}</span>
                     <span style={{ marginLeft: 'auto', fontWeight: 600 }}>{formatCurrency(quote.total, quote.currency)}</span>
                     <span style={{ fontSize: 12, color: 'var(--muted)' }}>(saves follow-up)</span>
                   </label>
@@ -347,23 +348,23 @@ export default function PublicQuotePage() {
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 16 }}>
                 {processors.includes('stripe') && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('stripe')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'stripe' ? 'Redirecting…' : 'Pay with Stripe →'}
+                    {paymentLoading === 'stripe' ? messages.loading.redirecting : messages.publicQuote.payWithStripe}
                   </button>
                 )}
                 {processors.includes('paypal') && isUsd && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('paypal')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'paypal' ? 'Redirecting…' : 'Pay with PayPal →'}
+                    {paymentLoading === 'paypal' ? messages.loading.redirecting : messages.publicQuote.payWithPayPal}
                   </button>
                 )}
                 {processors.includes('wipay') && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('wipay')} disabled={!!paymentLoading}>
-                    {paymentLoading === 'wipay' ? 'Redirecting…' : `Pay with WiPay (${quote.currency}) →`}
+                    {paymentLoading === 'wipay' ? messages.loading.redirecting : messages.publicQuote.payWithWiPay(quote.currency)}
                   </button>
                 )}
               </div>
               {paymentError && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{paymentError}</div>}
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                Prefer to pay by bank transfer or cash? Ask {businessName} to mark as paid once received.
+                {messages.publicQuote.payManually(businessName)}
               </div>
             </>
           )}
@@ -398,7 +399,7 @@ export default function PublicQuotePage() {
                   className="btn btn-outline btn-sm"
                   style={{ marginTop: 8 }}
                 >
-                  ⬇ Download PDF
+                  ⬇ {messages.publicQuote.downloadPDF}
                 </button>
               )}
             </div>
@@ -464,7 +465,7 @@ export default function PublicQuotePage() {
           )}
 
           <div className="qp-foot">
-            <div className="qp-valid">Valid for {quote.validity_days} days</div>
+            <div className="qp-valid">{messages.publicQuote.validFor(quote.validity_days)}</div>
             {!isGeneratingPDF && !accepted && quote.status !== 'accepted' && !isExpired && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
@@ -472,18 +473,18 @@ export default function PublicQuotePage() {
                     className="btn btn-outline"
                     onClick={() => setShowChangeRequest(prev => !prev)}
                   >
-                    ✏️ Request Changes
+                    ✏️ {messages.publicQuote.requestChanges}
                   </button>
                   {quote.require_signature && (
                   <div style={{ width: '100%', maxWidth: 320 }}>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--muted)' }}>
-                      Sign with your full name
+                      {messages.publicQuote.signLabel}
                     </label>
                     <input
                       type="text"
                       value={signatureName}
                       onChange={e => setSignatureName(e.target.value)}
-                      placeholder="e.g. Simone Richards"
+                      placeholder={messages.publicQuote.signaturePlaceholder}
                       style={{
                         width: '100%',
                         padding: 12,
@@ -499,27 +500,27 @@ export default function PublicQuotePage() {
                     onClick={() => void handleAccept()}
                     disabled={accepting || (quote.require_signature && !signatureName.trim())}
                   >
-                    {accepting ? 'Accepting…' : '✓ Accept this Quote'}
+                    {accepting ? messages.loading.accepting : messages.publicQuote.acceptButtonWithCheck}
                   </button>
                 </div>
                 {showChangeRequest && (
                   <div style={{ width: '100%', maxWidth: 480, padding: 16, background: 'var(--cream)', borderRadius: 10, border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--muted)' }}>Describe the changes you'd like</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: 'var(--muted)' }}>{messages.publicQuote.changeRequestPrompt}</div>
                     <textarea
-                      placeholder="e.g. Can we reduce the price for the logo design? Or extend the timeline by 1 week?"
+                      placeholder={messages.publicQuote.changeRequestPlaceholder}
                       value={changeRequestMsg}
                       onChange={e => setChangeRequestMsg(e.target.value)}
                       rows={4}
                       style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border)', fontSize: 14, resize: 'vertical', marginBottom: 10 }}
                     />
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                      <button className="btn btn-outline btn-sm" onClick={() => { setShowChangeRequest(false); setChangeRequestMsg(''); }}>Cancel</button>
+                      <button className="btn btn-outline btn-sm" onClick={() => { setShowChangeRequest(false); setChangeRequestMsg(''); }}>{messages.sendModal.cancel}</button>
                       <button
                         className="btn btn-dark btn-sm"
                         onClick={() => void handlePostChangeRequest()}
                         disabled={postingChangeRequest || !changeRequestMsg.trim()}
                       >
-                        {postingChangeRequest ? 'Sending…' : 'Send Request'}
+                        {postingChangeRequest ? messages.loading.sending : messages.publicQuote.sendRequest}
                       </button>
                     </div>
                   </div>
@@ -528,14 +529,14 @@ export default function PublicQuotePage() {
             )}
             {isExpired && !accepted && quote.status !== 'accepted' && (
               <div className="expiry-expired-box">
-                This quote expired on {formatDateLong(quote.expires_at)}. Contact {businessName} for a refreshed quote.
+                {messages.publicQuote.expiredMessage(formatDateLong(quote.expires_at), businessName)}
               </div>
             )}
             {(accepted || quote.status === 'accepted') && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                <span style={{ color: 'var(--success)', fontWeight: 600 }}>✅ Accepted</span>
+                <span style={{ color: 'var(--success)', fontWeight: 600 }}>✅ {messages.publicQuote.acceptedStatus}</span>
                 {quote.accepted_by_name && (
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>Signed by {quote.accepted_by_name}</span>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{messages.publicQuote.signedBy(quote.accepted_by_name)}</span>
                 )}
               </div>
             )}
@@ -543,7 +544,7 @@ export default function PublicQuotePage() {
 
           {/* Notes thread */}
           <div className="qp-notes" style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-            <div className="qp-notes-lbl">Questions & Notes</div>
+            <div className="qp-notes-lbl">{messages.publicQuote.questionsNotes}</div>
             {notes.length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 {notes.map(n => (
@@ -570,7 +571,7 @@ export default function PublicQuotePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <input
                   type="text"
-                  placeholder="Your name"
+                  placeholder={messages.publicQuote.yourNamePlaceholder}
                   value={noteName}
                   onChange={e => setNoteName(e.target.value)}
                   style={{
@@ -581,7 +582,7 @@ export default function PublicQuotePage() {
                   }}
                 />
                 <textarea
-                  placeholder="Ask a question or add a note…"
+                  placeholder={messages.publicQuote.messagePlaceholder}
                   value={noteMsg}
                   onChange={e => setNoteMsg(e.target.value)}
                   rows={3}
@@ -599,7 +600,7 @@ export default function PublicQuotePage() {
                   disabled={postingNote || !noteName.trim() || !noteMsg.trim()}
                   style={{ alignSelf: 'flex-end' }}
                 >
-                  {postingNote ? 'Sending…' : 'Send Message'}
+                  {postingNote ? messages.loading.sending : messages.publicQuote.sendMessage}
                 </button>
               </div>
             )}

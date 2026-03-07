@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Badge from '@/components/ui/Badge';
 import { formatCurrency, relativeTime } from '@/lib/utils';
+import { messages } from '@/lib/messages';
 import type { Quote } from '@/types';
 
 function PaymentIndicator({ quote }: { quote: Quote }) {
@@ -72,7 +73,7 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
         <div className="search-bar" style={{ flex: 1, minWidth: 200 }}>
           <span>🔍</span>
-          <input placeholder="Search quotes or clients…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input placeholder={messages.quotesPage.searchPlaceholder} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
@@ -102,7 +103,7 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ textAlign: 'center', padding: 52, color: 'var(--muted)' }}>
-                  {search ? 'No results for that search.' : 'No quotes yet.'}
+                  {search ? messages.empty.noResults : messages.empty.noQuotesYet}
                 </td>
               </tr>
             ) : filtered.map(q => (

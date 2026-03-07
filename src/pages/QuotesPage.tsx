@@ -10,6 +10,7 @@ import { useQuotes }      from '@/hooks/useQuotes';
 import { useProfile }     from '@/hooks/useProfile';
 import { quotesApi, templatesApi, isFreeTierLimitError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
+import { messages }      from '@/lib/messages';
 import type { Quote, SendChannel } from '@/types';
 
 export default function QuotesPage() {
@@ -27,7 +28,7 @@ export default function QuotesPage() {
   const handleDuplicate = async (id: string) => {
     try {
       const q = await duplicate(id);
-      toast(`📋 Duplicated as ${q.quote_number}`, 'success');
+      toast(messages.toast.duplicatedAs(q.quote_number), 'success');
     } catch (e) {
       if (isFreeTierLimitError(e)) {
         setShowUpgradeModal(true);
@@ -40,15 +41,15 @@ export default function QuotesPage() {
   const handleDelete = async (id: string) => {
     try {
       await remove(id);
-      toast('🗑 Quote deleted', 'warning');
+      toast(messages.toast.quoteDeletedShort, 'warning');
     } catch {
-      toast('Failed to delete quote', 'warning');
+      toast(messages.toast.failedToDelete, 'warning');
     }
   };
 
   const handleSend = async (id: string, channel: SendChannel, extra?: { email?: string; phone?: string }) => {
     const result = await quotesApi.send(id, { channel, recipient_email: extra?.email, recipient_phone: extra?.phone });
-    const msg = channel === 'link' ? '✅ Link copied to clipboard!' : `✅ Sent via ${channel}`;
+    const msg = channel === 'link' ? messages.toast.linkCopiedSuccess : messages.toast.sentVia(channel);
     toast(msg, 'success', 6000);
     await reload();
     return result;
@@ -59,35 +60,35 @@ export default function QuotesPage() {
       const updated = await quotesApi.markPaid(id);
       setPreview(prev => (prev?.id === id ? { ...prev, ...updated } : prev));
       await reload();
-      toast('✓ Marked as paid', 'success');
+      toast(messages.toast.markedAsPaid, 'success');
     } catch {
-      toast('Failed to mark as paid', 'warning');
+      toast(messages.toast.failedToMarkPaid, 'warning');
     }
   };
 
   const handleExport = async () => {
     try {
       await quotesApi.exportCSV();
-      toast('⬇ CSV downloading…', 'info');
+      toast(messages.toast.csvDownloading, 'info');
     } catch {
-      toast('Export failed', 'warning');
+      toast(messages.toast.exportFailed, 'warning');
     }
   };
 
   const handleSaveAsTemplate = async (name: string) => {
     if (!saveAsTemplateId) return;
     await templatesApi.createFromQuote({ name, quote_id: saveAsTemplateId });
-    toast('📄 Template saved!', 'success');
+    toast(messages.toast.templateSaved, 'success');
   };
 
   return (
     <>
       <Topbar
-        title="All Quotes"
+        title={messages.quotesPage.title}
         actions={
           <>
-            <button className="btn btn-outline" onClick={() => void handleExport()}>↓ Export CSV</button>
-            <button className="btn btn-dark" onClick={() => navigate('/app/create')}>+ New Quote</button>
+            <button className="btn btn-outline" onClick={() => void handleExport()}>{messages.quotesPage.exportCsv}</button>
+            <button className="btn btn-dark" onClick={() => navigate('/app/create')}>{messages.quotesPage.newQuote}</button>
           </>
         }
       />
@@ -98,7 +99,7 @@ export default function QuotesPage() {
           </div>
         )}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>Loading quotes…</div>
+          <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>{messages.loading.loadingQuotes}</div>
         ) : (
         <QuotesTable
           quotes={quotes}

@@ -9,9 +9,10 @@ import { useProfile }     from '@/hooks/useProfile';
 import { quotesApi, templatesApi, isFreeTierLimitError, isProRequiredError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
 import { calcTotals, copyToClipboard } from '@/lib/utils';
+import { messages } from '@/lib/messages';
 import type { LineItemInput, Currency, QuoteTemplate, QuoteWithDetails } from '@/types';
 
-const STEPS = ['Client Info', 'Line Items', 'Terms & Notes', 'Review & Send'];
+const STEPS = [...messages.createQuote.steps];
 
 interface FormState {
   client_id: string;
@@ -71,7 +72,7 @@ export default function CreateQuotePage() {
     quotesApi.get(editId)
       .then(q => {
         if (q.status !== 'draft') {
-          toast('Only draft quotes can be edited.', 'warning');
+          toast(messages.createQuote.onlyDraftEditable, 'warning');
           navigate('/app/quotes');
           return;
         }
@@ -96,7 +97,7 @@ export default function CreateQuotePage() {
           : [{ description: '', quantity: 1, unit_price: 0 }]);
       })
       .catch(() => {
-        toast('Quote not found.', 'warning');
+        toast(messages.createQuote.quoteNotFound, 'warning');
         navigate('/app/quotes');
       })
       .finally(() => setLoadingQuote(false));
@@ -153,10 +154,10 @@ export default function CreateQuotePage() {
           line_items: items,
         });
         setSavedQuote(updated);
-        toast('✅ Quote updated!', 'success');
+        toast(messages.createQuote.quoteUpdated, 'success');
       } else {
         await quotesApi.create({ ...form, line_items: items });
-        toast('✅ Quote created!', 'success');
+        toast(messages.createQuote.quoteCreated, 'success');
         navigate('/app/quotes');
       }
     } catch (e) {
@@ -165,7 +166,7 @@ export default function CreateQuotePage() {
       } else if (isProRequiredError(e)) {
         setShowUpgradeModal('pro');
       } else {
-        toast(e instanceof Error ? e.message : 'Failed to save quote', 'warning');
+        toast(e instanceof Error ? e.message : messages.createQuote.failedToSave, 'warning');
       }
     } finally {
       setLoading(false);
@@ -181,22 +182,22 @@ export default function CreateQuotePage() {
       });
       if (channel === 'link' && res.quote_link) {
         await copyToClipboard(res.quote_link);
-        toast('🔗 Link copied!', 'success');
+        toast(messages.createQuote.linkCopied, 'success');
       } else if (channel === 'email') {
-        toast('✅ Quote sent via email!', 'success');
+        toast(messages.createQuote.quoteSentEmail, 'success');
       }
       setSavedQuote(null);
       navigate('/app/quotes');
     } catch {
-      toast('Failed to send quote.', 'warning');
+      toast(messages.createQuote.failedToSend, 'warning');
     }
   };
 
   if (isEdit && loadingQuote) {
     return (
       <>
-        <Topbar title="Edit Quote" actions={<button className="btn btn-ghost" onClick={() => navigate('/app/quotes')}>Cancel</button>} />
-        <div className="page-body" style={{ textAlign: 'center', padding: 80, color: 'var(--muted)' }}>Loading quote…</div>
+        <Topbar title={messages.createQuote.editTitle} actions={<button className="btn btn-ghost" onClick={() => navigate('/app/quotes')}>{messages.createQuote.cancel}</button>} />
+        <div className="page-body" style={{ textAlign: 'center', padding: 80, color: 'var(--muted)' }}>{messages.createQuote.loadingQuote}</div>
       </>
     );
   }
@@ -204,22 +205,22 @@ export default function CreateQuotePage() {
   return (
     <>
       <Topbar
-        title={isEdit ? 'Edit Quote' : 'New Quote'}
+        title={isEdit ? messages.createQuote.editTitle : messages.createQuote.newTitle}
         actions={
           <>
-            {!isEdit && <button className="btn btn-outline" onClick={() => toast('Draft saved', 'info')}>Save Draft</button>}
-            <button className="btn btn-ghost" onClick={() => navigate('/app/quotes')}>Cancel</button>
+            {!isEdit && <button className="btn btn-outline" onClick={() => toast(messages.createQuote.draftSaved, 'info')}>{messages.createQuote.saveDraft}</button>}
+            <button className="btn btn-ghost" onClick={() => navigate('/app/quotes')}>{messages.createQuote.cancel}</button>
           </>
         }
       />
       <div className="page-body">
       {savedQuote && (
         <div style={{ marginBottom: 20, padding: 20, background: 'rgba(45,171,111,.1)', border: '1px solid var(--success)', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontWeight: 600, color: 'var(--success)' }}>Quote updated. Re-send to {savedQuote.client?.name ?? 'client'}?</div>
+          <div style={{ fontWeight: 600, color: 'var(--success)' }}>{messages.createQuote.resendPrompt(savedQuote.client?.name ?? 'client')}</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-success btn-sm" onClick={() => void handleResend('email')}>📧 Send via Email</button>
-            <button className="btn btn-outline btn-sm" onClick={() => void handleResend('link')}>🔗 Copy Link</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => { setSavedQuote(null); navigate('/app/quotes'); }}>Done</button>
+            <button className="btn btn-success btn-sm" onClick={() => void handleResend('email')}>{messages.createQuote.sendViaEmail}</button>
+            <button className="btn btn-outline btn-sm" onClick={() => void handleResend('link')}>{messages.createQuote.copyLink}</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => { setSavedQuote(null); navigate('/app/quotes'); }}>{messages.createQuote.done}</button>
           </div>
         </div>
       )}
@@ -246,11 +247,11 @@ export default function CreateQuotePage() {
           {/* Step 1: Client Info */}
           {step === 1 && (
             <div className="flow-card">
-              <div className="flow-title">Who is this quote for?</div>
-              <div className="flow-sub">Select an existing client or enter details manually.</div>
+              <div className="flow-title">{messages.createQuote.whoIsQuoteFor}</div>
+              <div className="flow-sub">{messages.createQuote.selectClientOrEnter}</div>
               {!isEdit && templates.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 8 }}>Start from Template</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', marginBottom: 8 }}>{messages.createQuote.startFromTemplate}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {templates.map(t => (
                       <button
@@ -267,31 +268,31 @@ export default function CreateQuotePage() {
               )}
               <div className="form-grid">
                 <div className="form-group form-full">
-                  <label>Select Client</label>
+                  <label>{messages.createQuote.selectClient}</label>
                   <select value={form.client_id} onChange={e => set('client_id', e.target.value)}>
-                    <option value="">— Choose client —</option>
+                    <option value="">{messages.createQuote.chooseClient}</option>
                     {clients.map(c => <option key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ''}</option>)}
                   </select>
                 </div>
                 <div className="form-group form-full">
-                  <label>Quote Title / Project</label>
-                  <input value={form.title} onChange={e => set('title', e.target.value)} placeholder="Brand Identity Design — March 2026" />
+                  <label>{messages.createQuote.quoteTitle}</label>
+                  <input value={form.title} onChange={e => set('title', e.target.value)} placeholder={messages.createQuote.quoteTitlePlaceholder} />
                 </div>
                 <div className="form-group">
-                  <label>Currency</label>
+                  <label>{messages.createQuote.currency}</label>
                   <select value={form.currency} onChange={e => set('currency', e.target.value as Currency)}>
                     {(['JMD','USD','TTD','BBD'] as Currency[]).map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Validity (days)</label>
+                  <label>{messages.createQuote.validityDays}</label>
                   <input type="number" min={1} max={365} value={form.validity_days} onChange={e => set('validity_days', parseInt(e.target.value))} />
                 </div>
               </div>
               <div className="flow-foot">
                 <div />
                 <button className="btn btn-dark" onClick={() => setStep(2)} disabled={!form.client_id || !form.title}>
-                  Next: Add Services →
+                  {messages.createQuote.nextAddServices}
                 </button>
               </div>
             </div>
@@ -300,8 +301,8 @@ export default function CreateQuotePage() {
           {/* Step 2: Line Items */}
           {step === 2 && (
             <div className="flow-card">
-              <div className="flow-title">What services are you quoting?</div>
-              <div className="flow-sub">Add each service or deliverable as a line item.</div>
+              <div className="flow-title">{messages.createQuote.whatServices}</div>
+              <div className="flow-sub">{messages.createQuote.addLineItems}</div>
               <LineItemsEditor
                 items={items}
                 onChange={setItems}
@@ -310,8 +311,8 @@ export default function CreateQuotePage() {
                 taxExempt={form.tax_exempt}
               />
               <div className="flow-foot">
-                <button className="btn btn-outline" onClick={() => setStep(1)}>← Back</button>
-                <button className="btn btn-dark" onClick={() => setStep(3)}>Next: Terms &amp; Notes →</button>
+                <button className="btn btn-outline" onClick={() => setStep(1)}>{messages.createQuote.back}</button>
+                <button className="btn btn-dark" onClick={() => setStep(3)}>{messages.createQuote.nextTerms}</button>
               </div>
             </div>
           )}
@@ -319,40 +320,40 @@ export default function CreateQuotePage() {
           {/* Step 3: Terms */}
           {step === 3 && (
             <div className="flow-card">
-              <div className="flow-title">Terms &amp; conditions</div>
-              <div className="flow-sub">Set payment terms, delivery, and extra options.</div>
+              <div className="flow-title">{messages.createQuote.termsTitle}</div>
+              <div className="flow-sub">{messages.createQuote.termsSub}</div>
               <div className="terms-grid">
                 <div className="form-group">
-                  <label>Deposit Required</label>
+                  <label>{messages.createQuote.depositRequired}</label>
                   <select value={form.deposit} onChange={e => set('deposit', e.target.value)}>
                     {['50% upfront','100% upfront','30% deposit','No deposit'].map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Payment Method</label>
+                  <label>{messages.createQuote.paymentMethod}</label>
                   <select value={form.payment_method} onChange={e => set('payment_method', e.target.value)}>
                     {['Bank Transfer','Cash','Cheque','PayPal','Stripe','Crypto'].map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Delivery Timeline</label>
+                  <label>{messages.createQuote.deliveryTimeline}</label>
                   <input value={form.delivery_timeline} onChange={e => set('delivery_timeline', e.target.value)} placeholder="10 business days" />
                 </div>
                 <div className="form-group">
-                  <label>Revisions</label>
+                  <label>{messages.createQuote.revisions}</label>
                   <input value={form.revisions} onChange={e => set('revisions', e.target.value)} placeholder="2 rounds" />
                 </div>
                 <div className="form-group" style={{ gridColumn: '1/-1' }}>
-                  <label>Notes / Scope</label>
-                  <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Files delivered via Google Drive upon final payment." />
+                  <label>{messages.createQuote.notesScope}</label>
+                  <textarea value={form.notes} onChange={e => set('notes', e.target.value)} placeholder={messages.createQuote.notesPlaceholder} />
                 </div>
               </div>
               <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { key: 'tax_exempt'         as const, label: 'GCT Exempt',          sub: 'No tax applied to this quote', pro: false },
-                  { key: 'require_signature'  as const, label: 'Require Signature',    sub: 'Client must sign to accept', pro: false },
-                  { key: 'track_views'        as const, label: 'Track Views',          sub: isPro ? 'Get notified when client opens' : 'Pro feature — Upgrade to enable', pro: true },
-                  { key: 'send_reminder'      as const, label: 'Send Reminder',        sub: 'Auto-remind 3 days before expiry', pro: false },
+                  { key: 'tax_exempt'         as const, label: messages.createQuote.gctExempt,          sub: messages.createQuote.gctExemptSub, pro: false },
+                  { key: 'require_signature'  as const, label: messages.createQuote.requireSignature,    sub: messages.createQuote.requireSignatureSub, pro: false },
+                  { key: 'track_views'        as const, label: messages.createQuote.trackViews,          sub: messages.createQuote.trackViewsSub(isPro), pro: true },
+                  { key: 'send_reminder'      as const, label: messages.createQuote.sendReminder,        sub: messages.createQuote.sendReminderSub, pro: false },
                 ].map(item => (
                   <div key={item.key} className="toggle-row">
                     <div>
@@ -368,8 +369,8 @@ export default function CreateQuotePage() {
                 ))}
               </div>
               <div className="flow-foot">
-                <button className="btn btn-outline" onClick={() => setStep(2)}>← Back</button>
-                <button className="btn btn-dark" onClick={() => setStep(4)}>Next: Review &amp; Send →</button>
+                <button className="btn btn-outline" onClick={() => setStep(2)}>{messages.createQuote.back}</button>
+                <button className="btn btn-dark" onClick={() => setStep(4)}>{messages.createQuote.nextReview}</button>
               </div>
             </div>
           )}
@@ -377,25 +378,25 @@ export default function CreateQuotePage() {
           {/* Step 4: Review */}
           {step === 4 && (
             <div className="flow-card">
-              <div className="flow-title">{isEdit ? 'Review &amp; Save' : 'Review &amp; Send'}</div>
-              <div className="flow-sub">{isEdit ? 'Review your changes and save.' : 'Everything looks good? Send your quote.'}</div>
+              <div className="flow-title">{isEdit ? messages.createQuote.reviewSave : messages.createQuote.reviewSend}</div>
+              <div className="flow-sub">{isEdit ? messages.createQuote.reviewChanges : messages.createQuote.everythingLooksGood}</div>
 
               <div className="review-section">
-                <div className="review-section-title">Quote Summary</div>
+                <div className="review-section-title">{messages.createQuote.quoteSummary}</div>
                 <div className="review-grid">
-                  <div className="review-item"><div className="review-item-label">Client</div><div className="review-item-val">{client?.name ?? '—'}</div></div>
-                  <div className="review-item"><div className="review-item-label">Project</div><div className="review-item-val">{form.title}</div></div>
-                  <div className="review-item"><div className="review-item-label">Subtotal</div><div className="review-item-val">{form.currency} {subtotal.toLocaleString()}</div></div>
-                  <div className="review-item"><div className="review-item-label">Total</div><div className="review-item-val" style={{ color: 'var(--accent)', fontFamily: 'Syne' }}>{form.currency} {total.toLocaleString()}</div></div>
-                  <div className="review-item"><div className="review-item-label">Deposit</div><div className="review-item-val">{form.deposit}</div></div>
-                  <div className="review-item"><div className="review-item-label">Valid For</div><div className="review-item-val">{form.validity_days} days</div></div>
+                  <div className="review-item"><div className="review-item-label">{messages.createQuote.client}</div><div className="review-item-val">{client?.name ?? '—'}</div></div>
+                  <div className="review-item"><div className="review-item-label">{messages.createQuote.project}</div><div className="review-item-val">{form.title}</div></div>
+                  <div className="review-item"><div className="review-item-label">{messages.createQuote.subtotal}</div><div className="review-item-val">{form.currency} {subtotal.toLocaleString()}</div></div>
+                  <div className="review-item"><div className="review-item-label">{messages.createQuote.total}</div><div className="review-item-val" style={{ color: 'var(--accent)', fontFamily: 'Syne' }}>{form.currency} {total.toLocaleString()}</div></div>
+                  <div className="review-item"><div className="review-item-label">{messages.createQuote.deposit}</div><div className="review-item-val">{form.deposit}</div></div>
+                  <div className="review-item"><div className="review-item-label">{messages.createQuote.validForLabel}</div><div className="review-item-val">{form.validity_days} {messages.createQuote.days}</div></div>
                 </div>
               </div>
 
               <div className="flow-foot">
-                <button className="btn btn-outline" onClick={() => setStep(3)}>← Back</button>
+                <button className="btn btn-outline" onClick={() => setStep(3)}>{messages.createQuote.back}</button>
                 <button className="btn btn-success" onClick={() => void handleSave()} disabled={loading}>
-                  {loading ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes ✓' : 'Create Quote ✓')}
+                  {loading ? (isEdit ? messages.createQuote.saving : messages.createQuote.creating) : (isEdit ? messages.createQuote.saveChanges : messages.createQuote.createQuote)}
                 </button>
               </div>
             </div>
