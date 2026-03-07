@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import Modal from '@/components/ui/Modal';
 import { quotesApi, paymentsApi } from '@/services/api';
 import { formatCurrency, formatDateLong, formatDateTime, quotePublicUrl, copyToClipboard, calcDepositAmount } from '@/lib/utils';
@@ -22,6 +24,7 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
   const [replyMsg, setReplyMsg] = useState('');
   const [postingReply, setPostingReply] = useState(false);
   const [requestingBalance, setRequestingBalance] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   useEffect(() => {
     if (!open || !quote?.id) return;
     quotesApi.getNotes(quote.id).then(setNotes).catch(() => {});
@@ -64,6 +67,51 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (!quote) return;
+    setIsGeneratingPDF(true);
+    try {
+      await new Promise(r => setTimeout(r, 100));
+      const element = document.getElementById('quote-content');
+      if (!element) return;
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const clientName = quote.client?.name ?? 'quote';
+      const fileName = `QuoteFlow-${quote.quote_number}-${clientName.replace(/\s+/g, '-')}.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      toast?.('Failed to generate PDF', 'warning');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   if (!open) return null;
   if (loading || !quote) {
     return (
@@ -81,9 +129,10 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
 
   return (
     <Modal open={open} onClose={onClose} maxWidth={760}>
-      <div className="qp-wrap" style={{ ['--quote-accent']: accent } as React.CSSProperties}>
-        {/* Header */}
-        <div className="qp-top">
+      <div id="quote-content">
+        <div className="qp-wrap" style={{ ['--quote-accent']: accent } as React.CSSProperties}>
+          {/* Header */}
+          <div className="qp-top">
           <div>
             {profile?.logo_url ? (
               <img src={profile.logo_url} alt="" style={{ maxHeight: 48, maxWidth: 140, objectFit: 'contain', marginBottom: 8 }} />
@@ -98,6 +147,16 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               Issued: {formatDateLong(quote.created_at)}<br />
               Expires: {formatDateLong(quote.expires_at)}
             </div>
+            {!isGeneratingPDF && (
+              <button
+                type="button"
+                onClick={() => void handleDownloadPDF()}
+                className="btn btn-outline btn-sm"
+                style={{ marginTop: 8 }}
+              >
+                ⬇ Download PDF
+              </button>
+            )}
           </div>
         </div>
 
@@ -136,15 +195,17 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               ) : quote.deposit_paid_at ? (
                 <>
                   <span style={{ color: 'var(--muted)' }}>○ Deposit paid {formatCurrency(calcDepositAmount(quote.deposit || '50%', quote.total), quote.currency)} · Balance due {formatCurrency(quote.total - calcDepositAmount(quote.deposit || '50%', quote.total), quote.currency)}</span>
-                  <div style={{ marginTop: 8 }}>
-                    <button
-                      className="btn btn-outline btn-sm"
-                      onClick={() => void handleRequestBalancePayment()}
-                      disabled={requestingBalance}
-                    >
-                      {requestingBalance ? 'Creating…' : 'Request Balance Payment'}
-                    </button>
-                  </div>
+                  {!isGeneratingPDF && (
+                    <div style={{ marginTop: 8 }}>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => void handleRequestBalancePayment()}
+                        disabled={requestingBalance}
+                      >
+                        {requestingBalance ? 'Creating…' : 'Request Balance Payment'}
+                      </button>
+                    </div>
+                  )}
                 </>
               ) : (
                 <span style={{ color: 'var(--muted)' }}>— Not yet paid</span>
@@ -228,29 +289,31 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               ))}
             </div>
           )}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            <textarea
-              placeholder="Reply to client…"
-              value={replyMsg}
-              onChange={e => setReplyMsg(e.target.value)}
-              rows={2}
-              style={{
-                flex: 1,
-                padding: 8,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                fontSize: 13,
-                resize: 'vertical',
-              }}
-            />
-            <button
-              className="btn btn-dark btn-sm"
-              onClick={() => void handleReply()}
-              disabled={postingReply || !replyMsg.trim()}
-            >
-              {postingReply ? '…' : 'Reply'}
-            </button>
-          </div>
+          {!isGeneratingPDF && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <textarea
+                placeholder="Reply to client…"
+                value={replyMsg}
+                onChange={e => setReplyMsg(e.target.value)}
+                rows={2}
+                style={{
+                  flex: 1,
+                  padding: 8,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  fontSize: 13,
+                  resize: 'vertical',
+                }}
+              />
+              <button
+                className="btn btn-dark btn-sm"
+                onClick={() => void handleReply()}
+                disabled={postingReply || !replyMsg.trim()}
+              >
+                {postingReply ? '…' : 'Reply'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -271,36 +334,39 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               </>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {quote.status === 'accepted' && !quote.paid_at && onMarkPaid && (
-              <button
-                className="btn btn-success btn-sm"
-                onClick={() => { onMarkPaid(quote.id); }}
-              >
-                ✓ Mark as Paid
-              </button>
-            )}
-            {quote.status !== 'accepted' && (
-              <>
-                {quote.share_token && (
-                  <button
-                    className="btn btn-outline btn-sm"
-                    onClick={() => {
-                      void copyToClipboard(publicLink);
-                      toast?.('🔗 Link copied!', 'success');
-                    }}
-                  >
-                    🔗 Copy Link
-                  </button>
-                )}
-                {onSend && (
-                  <button className="btn btn-dark btn-sm" onClick={() => { onClose(); onSend(quote.id); }}>
-                    📤 Send Quote
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+          {!isGeneratingPDF && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {quote.status === 'accepted' && !quote.paid_at && onMarkPaid && (
+                <button
+                  className="btn btn-success btn-sm"
+                  onClick={() => { onMarkPaid(quote.id); }}
+                >
+                  ✓ Mark as Paid
+                </button>
+              )}
+              {quote.status !== 'accepted' && (
+                <>
+                  {quote.share_token && (
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => {
+                        void copyToClipboard(publicLink);
+                        toast?.('🔗 Link copied!', 'success');
+                      }}
+                    >
+                      🔗 Copy Link
+                    </button>
+                  )}
+                  {onSend && (
+                    <button className="btn btn-dark btn-sm" onClick={() => { onClose(); onSend(quote.id); }}>
+                      📤 Send Quote
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </Modal>

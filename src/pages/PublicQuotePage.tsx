@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount } from '@/lib/utils';
@@ -25,6 +27,7 @@ export default function PublicQuotePage() {
   const [paymentType, setPaymentType] = useState<'full' | 'deposit'>('deposit');
   const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState('');
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -161,6 +164,50 @@ export default function PublicQuotePage() {
       alert('Could not accept quote. It may have already been accepted or expired.');
     } finally {
       setAccepting(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!quote) return;
+    setIsGeneratingPDF(true);
+    try {
+      await new Promise(r => setTimeout(r, 100));
+      const element = document.getElementById('quote-content');
+      if (!element) return;
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName = `QuoteFlow-${quote.quote_number}-${(quote.client?.name ?? 'quote').replace(/\s+/g, '-')}.pdf`;
+      pdf.save(fileName);
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      toast('Failed to generate PDF', 'warning');
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -323,10 +370,11 @@ export default function PublicQuotePage() {
         </div>
       )}
       <div className="modal" style={{ maxWidth: 760, margin: '0 auto' }}>
-        <div className="qp-wrap" style={{ ['--quote-accent']: accent } as React.CSSProperties}>
-          <div className="qp-top">
-            <div>
-              {quote.creator?.logo_url ? (
+        <div id="quote-content">
+          <div className="qp-wrap" style={{ ['--quote-accent']: accent } as React.CSSProperties}>
+            <div className="qp-top">
+              <div>
+                {quote.creator?.logo_url ? (
                 <img src={quote.creator.logo_url} alt="" style={{ maxHeight: 48, maxWidth: 140, objectFit: 'contain', marginBottom: 8 }} />
               ) : quote.creator?.white_label ? (
                 <div className="qp-brand" style={{ fontSize: 22, fontWeight: 700 }}>{quote.creator?.business_name || 'Professional Quote'}</div>
@@ -343,6 +391,16 @@ export default function PublicQuotePage() {
                 Issued: {formatDateLong(quote.created_at)}<br />
                 Expires: {formatDateLong(quote.expires_at)}
               </div>
+              {!isGeneratingPDF && (
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadPDF()}
+                  className="btn btn-outline btn-sm"
+                  style={{ marginTop: 8 }}
+                >
+                  ⬇ Download PDF
+                </button>
+              )}
             </div>
           </div>
 
@@ -407,7 +465,7 @@ export default function PublicQuotePage() {
 
           <div className="qp-foot">
             <div className="qp-valid">Valid for {quote.validity_days} days</div>
-            {!accepted && quote.status !== 'accepted' && !isExpired && (
+            {!isGeneratingPDF && !accepted && quote.status !== 'accepted' && !isExpired && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
                   <button
@@ -508,42 +566,45 @@ export default function PublicQuotePage() {
                 ))}
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input
-                type="text"
-                placeholder="Your name"
-                value={noteName}
-                onChange={e => setNoteName(e.target.value)}
-                style={{
-                  padding: 10,
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  fontSize: 14,
-                }}
-              />
-              <textarea
-                placeholder="Ask a question or add a note…"
-                value={noteMsg}
-                onChange={e => setNoteMsg(e.target.value)}
-                rows={3}
-                style={{
-                  padding: 10,
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  fontSize: 14,
-                  resize: 'vertical',
-                }}
-              />
-              <button
-                className="btn btn-dark"
-                onClick={() => void handlePostNote()}
-                disabled={postingNote || !noteName.trim() || !noteMsg.trim()}
-                style={{ alignSelf: 'flex-end' }}
-              >
-                {postingNote ? 'Sending…' : 'Send Message'}
-              </button>
-            </div>
+            {!isGeneratingPDF && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={noteName}
+                  onChange={e => setNoteName(e.target.value)}
+                  style={{
+                    padding: 10,
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    fontSize: 14,
+                  }}
+                />
+                <textarea
+                  placeholder="Ask a question or add a note…"
+                  value={noteMsg}
+                  onChange={e => setNoteMsg(e.target.value)}
+                  rows={3}
+                  style={{
+                    padding: 10,
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    fontSize: 14,
+                    resize: 'vertical',
+                  }}
+                />
+                <button
+                  className="btn btn-dark"
+                  onClick={() => void handlePostNote()}
+                  disabled={postingNote || !noteName.trim() || !noteMsg.trim()}
+                  style={{ alignSelf: 'flex-end' }}
+                >
+                  {postingNote ? 'Sending…' : 'Send Message'}
+                </button>
+              </div>
+            )}
           </div>
+        </div>
         </div>
       </div>
     </div>
