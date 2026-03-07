@@ -102,7 +102,7 @@ textarea { resize: vertical; min-height: 88px; }
   display: flex; flex-direction: column; padding: 28px 16px;
   overflow-y: auto; position: relative; z-index: 10;
 }
-.sidebar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -.5px; margin-bottom: 36px; padding: 0 8px; color: var(--paper); }
+.sidebar-logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -.5px; margin-bottom: 36px; padding: 0 8px; color: var(--paper); }
 .sidebar-logo span { color: var(--accent); }
 .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(245,242,236,.3); padding: 0 8px; margin-bottom: 8px; }
 .nav-item {
@@ -419,7 +419,7 @@ textarea { resize: vertical; min-height: 88px; }
 /* ── Quote Preview Modal (PDF-style) ── */
 .qp-wrap { padding: 46px; border-top: 4px solid var(--quote-accent, var(--accent)); }
 .qp-top  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; }
-.qp-brand { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; }
+.qp-brand { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; }
 .qp-brand .qp-accent,
 .qp-accent { color: var(--quote-accent, var(--accent)); }
 .qp-biz { font-size: 12px; color: var(--muted); margin-top: 4px; }
@@ -473,7 +473,7 @@ textarea { resize: vertical; min-height: 88px; }
 #landing-screen::before { content: ''; position: absolute; top: -180px; right: -180px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(circle, rgba(232,92,47,.22) 0%, transparent 70%); pointer-events: none; }
 #landing-screen::after  { content: ''; position: absolute; bottom: -120px; left: -120px; width: 440px; height: 440px; border-radius: 50%; background: radial-gradient(circle, rgba(47,125,232,.15) 0%, transparent 70%); pointer-events: none; }
 .land-nav { display: flex; justify-content: space-between; align-items: center; padding: 26px 60px; position: relative; z-index: 2; }
-.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -.5px; }
+.logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -.5px; }
 .logo span { color: var(--accent); }
 .land-nav-links { display: flex; gap: 28px; align-items: center; }
 .land-nav-links a { color: rgba(245,242,236,.55); text-decoration: none; font-size: 14px; cursor: pointer; transition: color .2s; }
@@ -534,10 +534,13 @@ textarea { resize: vertical; min-height: 88px; }
 .expiry-expired { background: var(--cream); color: var(--muted); border: 1px solid var(--border); }
 .expiry-expired-box { background: var(--cream); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; font-size: 14px; color: var(--muted); text-align: center; flex: 1 1 100%; order: 2; margin-top: 12px; }
 
+/* QuoteFlow wordmark — public quote page footer */
+.powered-by-wordmark { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 24px; }
+
 /* ── Login ── */
 .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--ink); }
 .login-card { background: var(--paper); border-radius: 20px; padding: 48px; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,.4); }
-.login-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 26px; text-align: center; margin-bottom: 32px; }
+.login-logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 28px; text-align: center; margin-bottom: 32px; }
 .login-logo span { color: var(--accent); }
 .login-tabs { display: flex; gap: 0; background: var(--cream); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
 .login-tab { flex: 1; padding: 9px; text-align: center; border-radius: 7px; cursor: pointer; font-size: 13px; transition: all .2s; border: none; background: transparent; font-family: 'DM Sans', sans-serif; color: var(--muted); }
@@ -559,8 +562,8 @@ textarea { resize: vertical; min-height: 88px; }
     display: flex; align-items: center; justify-content: space-between; padding: 14px 20px;
     background: var(--ink); color: var(--paper); position: sticky; top: 0; z-index: 100;
   }
-  .mobile-header .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; }
-  .mobile-header .logo span { color: var(--accent); }
+.mobile-header .logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; }
+.mobile-header .logo span { color: var(--accent); }
   .hamburger { background: none; border: none; color: var(--paper); font-size: 24px; cursor: pointer; padding: 4px 8px; }
   .main { min-height: 0; }
   .topbar { flex-wrap: wrap; gap: 12px; padding: 16px 20px; }

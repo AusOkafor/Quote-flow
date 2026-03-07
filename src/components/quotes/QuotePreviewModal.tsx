@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import Modal from '@/components/ui/Modal';
 import { quotesApi, paymentsApi } from '@/services/api';
 import { formatCurrency, formatDateLong, formatDateTime, quotePublicUrl, copyToClipboard, calcDepositAmount } from '@/lib/utils';
+import { logoStyles } from '@/lib/logoStyles';
 import type { Quote, QuoteNote } from '@/types';
 
 interface Props {
@@ -135,7 +136,14 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
           <div className="qp-top">
           <div>
             {profile?.logo_url ? (
-              <img src={profile.logo_url} alt="" style={{ maxHeight: 48, maxWidth: 140, objectFit: 'contain', marginBottom: 8 }} />
+              <img
+                src={profile.logo_url}
+                alt={profile?.business_name || ''}
+                style={{
+                  ...(isGeneratingPDF ? logoStyles.pdf : logoStyles.publicQuote),
+                  marginBottom: 8,
+                }}
+              />
             ) : (
               <div className="qp-brand">Quote<span className="qp-accent">Flow</span></div>
             )}
@@ -264,7 +272,8 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
           </div>
         )}
 
-        {/* Notes thread */}
+        {/* Notes thread — hidden in PDF */}
+        {!isGeneratingPDF && (
         <div className="qp-notes" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
           <div className="qp-notes-lbl">Questions & Notes</div>
           {notes.length > 0 && (
@@ -315,9 +324,11 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
             </div>
           )}
         </div>
+        )}
 
         {/* Footer */}
         <div className="qp-foot">
+          {!isGeneratingPDF && (
           <div className="qp-valid">
             Valid for {quote.validity_days} days<br />
             <span style={{ fontSize: 11, color: 'var(--muted)' }}>Views: {quote.view_count}</span>
@@ -334,6 +345,7 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               </>
             )}
           </div>
+          )}
           {!isGeneratingPDF && (
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               {quote.status === 'accepted' && !quote.paid_at && onMarkPaid && (

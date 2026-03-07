@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount } from '@/lib/utils';
+import { logoStyles } from '@/lib/logoStyles';
 import { messages } from '@/lib/messages';
 import type { QuoteWithDetails, QuoteNote, PaymentProcessor } from '@/types';
 
@@ -244,28 +245,28 @@ export default function PublicQuotePage() {
     if (daysRemaining > 7) {
       return (
         <div className="expiry-banner expiry-neutral">
-          Valid for {quote.validity_days} days · Expires {expDate}
+          {isGeneratingPDF ? `Expires ${expDate}` : `Valid for ${quote.validity_days} days · Expires ${expDate}`}
         </div>
       );
     }
     if (daysRemaining >= 3 && daysRemaining <= 7) {
       return (
         <div className="expiry-banner expiry-amber">
-          ⏱ Expires in {daysRemaining} days — {expDate}
+          {isGeneratingPDF ? `Expires ${expDate}` : `⏱ Expires in ${daysRemaining} days — ${expDate}`}
         </div>
       );
     }
     if (daysRemaining === 1 || daysRemaining === 2) {
       return (
         <div className="expiry-banner expiry-red">
-          ⚠ Expires {daysRemaining === 1 ? 'tomorrow' : `in ${daysRemaining} days`} — accept today
+          {isGeneratingPDF ? `Expires ${expDate}` : `⚠ Expires ${daysRemaining === 1 ? 'tomorrow' : `in ${daysRemaining} days`} — accept today`}
         </div>
       );
     }
     if (daysRemaining === 0) {
       return (
         <div className="expiry-banner expiry-red">
-          ⚠ Expires today — accept now
+          {isGeneratingPDF ? `Expires ${expDate}` : '⚠ Expires today — accept now'}
         </div>
       );
     }
@@ -379,7 +380,14 @@ export default function PublicQuotePage() {
             <div className="qp-top">
               <div>
                 {quote.creator?.logo_url ? (
-                <img src={quote.creator.logo_url} alt="" style={{ maxHeight: 48, maxWidth: 140, objectFit: 'contain', marginBottom: 8 }} />
+                <img
+                  src={quote.creator.logo_url}
+                  alt={quote.creator?.business_name || ''}
+                  style={{
+                    ...(isGeneratingPDF ? logoStyles.pdf : logoStyles.publicQuote),
+                    marginBottom: 8,
+                  }}
+                />
               ) : quote.creator?.white_label ? (
                 <div className="qp-brand" style={{ fontSize: 22, fontWeight: 700 }}>{quote.creator?.business_name || 'Professional Quote'}</div>
               ) : (
@@ -468,7 +476,9 @@ export default function PublicQuotePage() {
           )}
 
           <div className="qp-foot">
-            <div className="qp-valid">{messages.publicQuote.validFor(quote.validity_days)}</div>
+            {!isGeneratingPDF && (
+              <div className="qp-valid">{messages.publicQuote.validFor(quote.validity_days)}</div>
+            )}
             {!isGeneratingPDF && !accepted && quote.status !== 'accepted' && !isExpired && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', width: '100%', justifyContent: 'flex-end' }}>
@@ -545,7 +555,8 @@ export default function PublicQuotePage() {
             )}
           </div>
 
-          {/* Notes thread */}
+          {/* Notes thread — hidden in PDF */}
+          {!isGeneratingPDF && (
           <div className="qp-notes" style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
             <div className="qp-notes-lbl">{messages.publicQuote.questionsNotes}</div>
             {notes.length > 0 && (
@@ -608,12 +619,13 @@ export default function PublicQuotePage() {
               </div>
             )}
           </div>
+          )}
         </div>
         </div>
       </div>
-      {!quote.creator?.white_label && (
+      {!isGeneratingPDF && !quote.creator?.white_label && (
         <div className="powered-by-footer" style={{ textAlign: 'center', padding: '24px 16px', fontSize: 13, color: 'var(--muted)' }}>
-          Powered by <a href="https://quoteflow.app" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>QuoteFlow</a>
+          Powered by <a href="https://quoteflow.app" target="_blank" rel="noopener noreferrer" className="powered-by-wordmark" style={{ color: 'var(--accent)', textDecoration: 'none' }}>QuoteFlow</a>
         </div>
       )}
     </div>

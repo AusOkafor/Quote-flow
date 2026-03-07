@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import Toggle from '@/components/ui/Toggle';
 import { supabase } from '@/lib/supabase';
+import { logoStyles } from '@/lib/logoStyles';
 import type { Profile } from '@/types';
 
 interface Props {
@@ -125,7 +126,7 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
         />
         {profile.logo_url ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, opacity: isPro ? 1 : 0.6 }}>
-            <img src={profile.logo_url} alt="Logo" style={{ maxHeight: 64, maxWidth: 160, objectFit: 'contain' }} />
+            <img src={profile.logo_url} alt="Logo" style={logoStyles.settings} />
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="button" className="btn btn-outline btn-sm" onClick={handleLogoClick} disabled={uploading || !isPro}>
                 {uploading ? 'Uploading…' : 'Replace'}
