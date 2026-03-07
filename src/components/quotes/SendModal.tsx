@@ -45,11 +45,13 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend }: Pro
     if (!quote?.share_token) return;
     const quoteURL = quotePublicUrl(quote.share_token);
     const clientName = quote.client?.name || 'there';
+    const formattedTotal = formatCurrency(quote.total, quote.currency);
+    const formattedExpiry = formatDateLong(quote.expires_at);
     const message = encodeURIComponent(
       `Hi ${clientName},\n\n` +
       `I've sent you a quote for *${quote.title}*.\n\n` +
-      `💰 Total: ${formatCurrency(quote.total, quote.currency)}\n` +
-      `📅 Valid until: ${formatDateLong(quote.expires_at)}\n\n` +
+      `Total: *${formattedTotal}*\n` +
+      `Valid until: ${formattedExpiry}\n\n` +
       `View and accept your quote here:\n${quoteURL}\n\n` +
       `Let me know if you have any questions.`
     );
