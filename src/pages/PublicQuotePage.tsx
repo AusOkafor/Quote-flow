@@ -5,7 +5,6 @@ import html2canvas from 'html2canvas';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
 import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount } from '@/lib/utils';
-import { logoStyles } from '@/lib/logoStyles';
 import { messages } from '@/lib/messages';
 import type { QuoteWithDetails, QuoteNote, PaymentProcessor } from '@/types';
 
@@ -46,6 +45,12 @@ export default function PublicQuotePage() {
     if (!token || !quote) return;
     publicApi.getNotes(token).then(setNotes).catch(() => {});
   }, [token, quote]);
+
+  useEffect(() => {
+    if (quote?.creator?.logo_url) {
+      console.log('[Logo] url:', quote.creator.logo_url);
+    }
+  }, [quote?.creator?.logo_url]);
 
   useEffect(() => {
     if (quote?.creator?.default_payment_timing === 'full') setPaymentType('full');
@@ -378,16 +383,23 @@ export default function PublicQuotePage() {
         <div id="quote-content">
           <div className="qp-wrap" style={{ ['--quote-accent']: accent } as React.CSSProperties}>
             <div className="qp-top">
-              <div>
+              <div className="freelancer-logo-container" style={{ minWidth: 220, maxWidth: 220 }}>
                 {quote.creator?.logo_url ? (
-                <img
-                  src={quote.creator.logo_url}
-                  alt={quote.creator?.business_name || ''}
-                  style={{
-                    ...(isGeneratingPDF ? logoStyles.pdf : logoStyles.publicQuote),
-                    marginBottom: 8,
-                  }}
-                />
+                <>
+                  <img
+                    src={quote.creator.logo_url}
+                    alt={quote.creator?.business_name || ''}
+                    className="freelancer-logo"
+                    style={{
+                      height: isGeneratingPDF ? '64px' : '72px',
+                      maxWidth: isGeneratingPDF ? '200px' : '220px',
+                      width: 'auto',
+                      objectFit: 'contain',
+                      display: 'block',
+                      marginBottom: 8,
+                    }}
+                  />
+                </>
               ) : quote.creator?.white_label ? (
                 <div className="qp-brand" style={{ fontSize: 22, fontWeight: 700 }}>{quote.creator?.business_name || 'Professional Quote'}</div>
               ) : (

@@ -419,6 +419,8 @@ textarea { resize: vertical; min-height: 88px; }
 /* ── Quote Preview Modal (PDF-style) ── */
 .qp-wrap { padding: 46px; border-top: 4px solid var(--quote-accent, var(--accent)); }
 .qp-top  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 36px; }
+.freelancer-logo-container { min-width: 220px; max-width: 220px; }
+.freelancer-logo { height: 72px; max-width: 220px; width: auto; object-fit: contain; display: block; }
 .qp-brand { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; }
 .qp-brand .qp-accent,
 .qp-accent { color: var(--quote-accent, var(--accent)); }
