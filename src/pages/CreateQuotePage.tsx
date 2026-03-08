@@ -86,6 +86,10 @@ export default function CreateQuotePage() {
   useEffect(() => {
     if (!profile || isEdit || profileDefaultsApplied.current) return;
     profileDefaultsApplied.current = true;
+    // tax_exempt_default can be null in DB for older profiles — treat null as true (exempt by default)
+    const taxExemptDefault = (profile.tax_exempt_default as boolean | null) !== null
+      ? profile.tax_exempt_default
+      : true;
     setForm(prev => ({
       ...prev,
       currency:          (profile.default_currency as FormState['currency']) || prev.currency,
@@ -96,7 +100,7 @@ export default function CreateQuotePage() {
       revisions:         profile.default_revisions     || prev.revisions,
       notes:             profile.default_notes         || prev.notes,
       tax_rate:          profile.tax_rate               ?? prev.tax_rate,
-      tax_exempt:        profile.tax_exempt_default     ?? prev.tax_exempt,
+      tax_exempt:        taxExemptDefault,
     }));
   }, [profile, isEdit]);
 
