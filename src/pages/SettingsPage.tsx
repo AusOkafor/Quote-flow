@@ -56,6 +56,13 @@ export default function SettingsPage() {
   const profile = local ?? savedProfile ?? DEFAULT_PROFILE;
   const onChange = (updates: Partial<Profile>) => setLocal(prev => ({ ...(prev ?? profile), ...updates }));
 
+  const saveImmediate = async (updates: Partial<Profile>) => {
+    const toSave = { ...(local ?? savedProfile ?? DEFAULT_PROFILE), ...updates };
+    await save(toSave);
+    setLocal(null);
+    toast('✅ Settings saved!', 'success');
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -94,7 +101,7 @@ export default function SettingsPage() {
             ))}
           </div>
           <div className="settings-panel">
-            {panel === 'profile'   && <ProfilePanel  profile={profile} onChange={onChange} onError={msg => toast(msg, 'warning')} />}
+            {panel === 'profile'   && <ProfilePanel  profile={profile} onChange={onChange} onSaveImmediate={saveImmediate} onError={msg => toast(msg, 'warning')} />}
             {panel === 'defaults'  && <DefaultsPanel profile={profile} onChange={onChange} />}
             {panel === 'templates' && <TemplatesPanel onError={msg => toast(msg, 'warning')} />}
             {panel === 'tax'       && <TaxPanel      profile={profile} onChange={onChange} />}

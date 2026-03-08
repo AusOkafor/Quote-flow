@@ -7,6 +7,7 @@ import type { Profile } from '@/types';
 interface Props {
   profile: Profile;
   onChange: (updates: Partial<Profile>) => void;
+  onSaveImmediate?: (updates: Partial<Profile>) => Promise<void>;
   onError?: (msg: string) => void;
 }
 
@@ -15,7 +16,7 @@ const BRAND_COLORS = ['#E85C2F','#2DAB6F','#2F7DE8','#C9A84C','#8B5CF6','#EC4899
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'];
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
-export default function ProfilePanel({ profile, onChange, onError }: Props) {
+export default function ProfilePanel({ profile, onChange, onSaveImmediate, onError }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -53,10 +54,19 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
       const { error } = await supabase.storage.from('logos').upload(path, file, { upsert: true });
       if (error) throw error;
       const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
-      // Cache-bust so browser loads the new image (same path = cached old image)
-      const logoUrl = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
-      console.log('[Logo] upload success, url:', logoUrl);
-      onChange({ logo_url: logoUrl });
+      // Cache-bust for immediate display (same path = cached old image)
+      const logoUrlForDisplay = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      console.log('[Logo] upload success, url:', publicUrl);
+      onChange({ logo_url: logoUrlForDisplay });
+      // Persist to database immediately so logo survives refresh
+      if (onSaveImmediate) {
+        try {
+          await onSaveImmediate({ logo_url: publicUrl });
+        } catch (err) {
+          console.error('[Logo] save to profile failed:', err);
+          onError?.('Logo uploaded but failed to save. Click Save Changes to retry.');
+        }
+      }
     } catch (err) {
       console.error('[Logo] upload failed:', err);
       onError?.(err instanceof Error ? err.message : 'Upload failed.');
@@ -65,9 +75,17 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
     }
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = async () => {
     console.log('[Logo] remove clicked');
     onChange({ logo_url: null });
+    if (onSaveImmediate) {
+      try {
+        await onSaveImmediate({ logo_url: null });
+      } catch (err) {
+        console.error('[Logo] remove failed:', err);
+        onError?.('Failed to remove logo.');
+      }
+    }
   };
   const isPro = profile.plan === 'pro' || profile.plan === 'business';
 
@@ -140,7 +158,7 @@ export default function ProfilePanel({ profile, onChange, onError }: Props) {
               <button type="button" className="btn btn-outline btn-sm" onClick={handleReplaceLogo} disabled={uploading || !isPro}>
                 {uploading ? 'Uploading…' : 'Replace'}
               </button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => isPro && handleRemoveLogo()} style={{ color: 'var(--danger)' }} disabled={!isPro}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => isPro && void handleRemoveLogo()} style={{ color: 'var(--danger)' }} disabled={!isPro}>
                 Remove
               </button>
             </div>
