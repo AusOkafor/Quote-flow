@@ -38,8 +38,10 @@ export default function TaxPanel({ profile, onChange }: Props) {
   const handleTaxTypeChange = (value: string) => {
     const selected = TAX_TYPES.find(t => t.value === value);
     if (!selected) return;
-    onChange({ tax_type: value });
-    if (selected.rate > 0) {
+    if (value === 'none') {
+      onChange({ tax_type: value, tax_rate: 0 });
+      setRateNote('');
+    } else if (selected.rate > 0) {
       onChange({ tax_type: value, tax_rate: selected.rate });
       setRateNote(`Suggested rate for ${selected.label.split('—')[0].trim()}. You can change this.`);
     } else {
@@ -61,23 +63,28 @@ export default function TaxPanel({ profile, onChange }: Props) {
             ))}
           </select>
         </div>
-        <div className="form-group">
-          <label>Tax Rate (%)</label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            step={0.5}
-            value={profile.tax_rate}
-            onChange={e => { onChange({ tax_rate: parseFloat(e.target.value) }); setRateNote(''); }}
-          />
-          {rateNote && (
-            <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, marginBottom: 0 }}>{rateNote}</p>
-          )}
-        </div>
+        {profile.tax_type !== 'none' && (
+          <div className="form-group">
+            <label>Tax Rate (%)</label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={profile.tax_rate}
+              onChange={e => { onChange({ tax_rate: parseFloat(e.target.value) }); setRateNote(''); }}
+            />
+            {rateNote && (
+              <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, marginBottom: 0 }}>{rateNote}</p>
+            )}
+          </div>
+        )}
         <div className="form-group form-full">
-          <label>Tax Registration Number</label>
+          <label>Tax Registration Number (optional)</label>
           <input value={profile.tax_number} onChange={e => onChange({ tax_number: e.target.value })} placeholder="e.g. TRN 123-456-789" />
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4, marginBottom: 0 }}>
+            Only required if your local tax authority mandates it on invoices. Leave blank if not applicable.
+          </p>
         </div>
       </div>
       <div className="toggle-row-setting" style={{ marginTop: 20 }}>
