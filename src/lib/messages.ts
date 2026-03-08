@@ -243,7 +243,7 @@ export const messages = {
     upgradePro: 'Upgrade to Pro — $15/month',
     upgradeBusiness: 'Upgrade to Business — $39/month',
     upgradeProDesc: 'Unlimited quotes, custom branding, view tracking, and more.',
-    upgradeBusinessDesc: 'Team members, API access, custom domain, white-label quotes.',
+    upgradeBusinessDesc: 'Team members and white-label quotes.',
     upgradeMonthly: 'Upgrade Monthly',
     upgradeAnnual: 'Upgrade Annual (save 20%)',
     securePayment: 'Secure payment via Stripe. Cancel anytime.',

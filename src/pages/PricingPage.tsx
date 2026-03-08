@@ -18,7 +18,7 @@ const PLANS = [
   {
     tier: 'Business',
     monthly: 39, annual: 32,
-    features: ['Everything in Pro', 'Team members (5)', 'API access', 'Custom domain', 'Dedicated account manager', 'White-label quotes'],
+    features: ['Everything in Pro', 'Team members (5)', 'API access', 'Dedicated account manager', 'White-label quotes'],
     featured: false,
   },
 ];
