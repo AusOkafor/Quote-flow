@@ -48,6 +48,7 @@ export default function CreateQuotePage() {
   const [items, setItems]         = useState<LineItemInput[]>([{ description: '', quantity: 1, unit_price: 0 }]);
   const [savedQuote, setSavedQuote] = useState<QuoteWithDetails | null>(null);
   const [isDirty, setIsDirty]     = useState(false);
+  const [hasPaymentMethod, setHasPaymentMethod] = useState(true);
   const profileDefaultsApplied    = useRef(false);
   const [form, setForm]       = useState<FormState>({
     client_id: '', title: '', currency: 'JMD',
@@ -64,6 +65,9 @@ export default function CreateQuotePage() {
 
   useEffect(() => {
     templatesApi.list().then(setTemplates).catch(() => {});
+    paymentsApi.listAccounts()
+      .then(accounts => setHasPaymentMethod(accounts.some(a => a.is_active)))
+      .catch(() => {});
   }, []);
 
   // Auto-save draft 30s after last change (new quotes only)
@@ -215,13 +219,9 @@ export default function CreateQuotePage() {
     }
   };
 
-  const handleResend = async (channel: 'email' | 'link') => {
+  const doSend = async (channel: 'email' | 'link') => {
     if (!editId || !savedQuote) return;
     try {
-      const accounts = await paymentsApi.listAccounts().catch(() => []);
-      if (!accounts.some(a => a.is_active)) {
-        toast('No payment method connected — your client won\'t be able to pay through this quote.', 'warning');
-      }
       const res = await quotesApi.send(editId, {
         channel,
         recipient_email: channel === 'email' ? savedQuote.client?.email : undefined,
@@ -237,6 +237,20 @@ export default function CreateQuotePage() {
     } catch {
       toast(messages.createQuote.failedToSend, 'warning');
     }
+  };
+
+  const handleResend = (channel: 'email' | 'link') => {
+    if (!editId || !savedQuote) return;
+    if (!hasPaymentMethod) {
+      toast(
+        'No payment method connected — your client won\'t be able to pay through this quote.',
+        'warning',
+        0, // don't auto-dismiss
+        { label: 'Send Anyway', onClick: () => void doSend(channel) },
+      );
+      return;
+    }
+    void doSend(channel);
   };
 
   if (isEdit && loadingQuote) {

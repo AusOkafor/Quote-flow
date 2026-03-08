@@ -30,19 +30,22 @@ function normalizePhoneForWaMe(input: string): string {
 }
 
 export default function SendModal({ quoteId, quote, open, onClose, onSend, hasPaymentMethod = true }: Props) {
-  const [channel,  setChannel]  = useState<SendChannel>('email');
-  const [email,    setEmail]    = useState('');
-  const [phone,    setPhone]    = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState<string | null>(null);
+  const [channel,        setChannel]        = useState<SendChannel>('email');
+  const [email,          setEmail]          = useState('');
+  const [phone,          setPhone]          = useState('');
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState<string | null>(null);
+  const [confirmPending, setConfirmPending] = useState(false);
 
   useEffect(() => {
     if (open && quote?.client) {
       setEmail(quote.client.email || '');
       setPhone(quote.client.phone || '');
     }
-    if (!open) setError(null);
+    if (!open) { setError(null); setConfirmPending(false); }
   }, [open, quote?.client?.email, quote?.client?.phone]);
+
+  useEffect(() => { setConfirmPending(false); }, [channel]);
 
   const handleWhatsAppSend = async () => {
     if (!quote?.share_token || !quoteId) return;
@@ -73,7 +76,7 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend, hasPa
     onClose();
   };
 
-  const handleSend = async () => {
+  const proceedWithSend = async () => {
     if (!quoteId) return;
     if (channel === 'whatsapp') {
       void handleWhatsAppSend();
@@ -92,6 +95,14 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend, hasPa
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSend = () => {
+    if (!hasPaymentMethod && !confirmPending) {
+      setConfirmPending(true);
+      return;
+    }
+    void proceedWithSend();
   };
 
   const sendViaLabel = channel === 'link' ? messages.sendModal.link : channel === 'email' ? messages.sendModal.email : messages.sendModal.whatsapp;
@@ -149,12 +160,29 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend, hasPa
           </div>
         )}
 
-        <div className="modal-foot">
-          <button className="btn btn-outline" onClick={onClose}>{messages.sendModal.cancel}</button>
-          <button className="btn btn-success" onClick={() => void handleSend()} disabled={loading}>
-            {loading ? messages.loading.sending : messages.sendModal.sendVia(sendViaLabel)}
-          </button>
-        </div>
+        {confirmPending ? (
+          <div style={{ background: 'rgba(234,179,8,.08)', border: '1px solid rgba(234,179,8,.3)', borderRadius: 10, padding: '14px 16px' }}>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--text-primary)' }}>⚠️ Your client won't be able to pay online.</strong>
+              {' '}No payment method is connected. Do you still want to send this quote?
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button className="btn btn-outline btn-sm" onClick={() => setConfirmPending(false)}>
+                Go Back
+              </button>
+              <button className="btn btn-warning btn-sm" onClick={() => void proceedWithSend()} disabled={loading}>
+                {loading ? messages.loading.sending : 'Send Anyway'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="modal-foot">
+            <button className="btn btn-outline" onClick={onClose}>{messages.sendModal.cancel}</button>
+            <button className="btn btn-success" onClick={handleSend} disabled={loading}>
+              {loading ? messages.loading.sending : messages.sendModal.sendVia(sendViaLabel)}
+            </button>
+          </div>
+        )}
       </div>
     </Modal>
   );
