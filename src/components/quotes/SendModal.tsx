@@ -10,6 +10,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSend: (id: string, channel: SendChannel, extra?: { email?: string; phone?: string }) => Promise<{ quote_link?: string } | void>;
+  /** Pass false to show a warning that no payment processor is connected */
+  hasPaymentMethod?: boolean;
 }
 
 const CHANNELS: { value: SendChannel; icon: string; title: string; sub: string }[] = [
@@ -27,7 +29,7 @@ function normalizePhoneForWaMe(input: string): string {
   return digits;
 }
 
-export default function SendModal({ quoteId, quote, open, onClose, onSend }: Props) {
+export default function SendModal({ quoteId, quote, open, onClose, onSend, hasPaymentMethod = true }: Props) {
   const [channel,  setChannel]  = useState<SendChannel>('email');
   const [email,    setEmail]    = useState('');
   const [phone,    setPhone]    = useState('');
@@ -129,6 +131,15 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend }: Pro
         {channel === 'link' && (
           <div style={{ background: 'var(--cream)', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
             {messages.sendModal.linkDescription}
+          </div>
+        )}
+
+        {!hasPaymentMethod && (
+          <div style={{ background: 'rgba(232,162,47,.1)', border: '1px solid rgba(232,162,47,.35)', borderRadius: 10, padding: 12, fontSize: 13, color: 'var(--warning, #b45309)', marginBottom: 16 }}>
+            ⚠️ No payment method connected. Your client won't be able to pay through this quote. You can still send it — or{' '}
+            <a href="/app/settings?panel=payments" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', fontWeight: 600 }}>
+              connect a payment method
+            </a>{' '}first.
           </div>
         )}
 

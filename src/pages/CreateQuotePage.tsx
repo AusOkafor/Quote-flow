@@ -6,7 +6,7 @@ import LineItemsEditor    from '@/components/quotes/LineItemsEditor';
 import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useClients }     from '@/hooks/useClients';
 import { useProfile }     from '@/hooks/useProfile';
-import { quotesApi, templatesApi, isFreeTierLimitError, isProRequiredError } from '@/services/api';
+import { quotesApi, templatesApi, paymentsApi, isFreeTierLimitError, isProRequiredError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
 import { calcTotals, copyToClipboard } from '@/lib/utils';
 import { messages } from '@/lib/messages';
@@ -218,6 +218,10 @@ export default function CreateQuotePage() {
   const handleResend = async (channel: 'email' | 'link') => {
     if (!editId || !savedQuote) return;
     try {
+      const accounts = await paymentsApi.listAccounts().catch(() => []);
+      if (!accounts.some(a => a.is_active)) {
+        toast('No payment method connected — your client won\'t be able to pay through this quote.', 'warning');
+      }
       const res = await quotesApi.send(editId, {
         channel,
         recipient_email: channel === 'email' ? savedQuote.client?.email : undefined,

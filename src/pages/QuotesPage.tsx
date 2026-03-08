@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Topbar             from '@/components/layout/Topbar';
 import QuotesTable        from '@/components/quotes/QuotesTable';
@@ -8,7 +8,7 @@ import SaveAsTemplateModal from '@/components/modals/SaveAsTemplateModal';
 import UpgradeLimitModal  from '@/components/modals/UpgradeLimitModal';
 import { useQuotes }      from '@/hooks/useQuotes';
 import { useProfile }     from '@/hooks/useProfile';
-import { quotesApi, templatesApi, isFreeTierLimitError } from '@/services/api';
+import { quotesApi, templatesApi, paymentsApi, isFreeTierLimitError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
 import { messages }      from '@/lib/messages';
 import type { Quote, SendChannel } from '@/types';
@@ -24,6 +24,13 @@ export default function QuotesPage() {
   const [sendQuote, setSendQuote] = useState<Quote | null>(null);
   const [saveAsTemplateId, setSaveAsTemplateId] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [hasPaymentMethod, setHasPaymentMethod] = useState(true);
+
+  useEffect(() => {
+    paymentsApi.listAccounts()
+      .then(accounts => setHasPaymentMethod(accounts.some(a => a.is_active)))
+      .catch(() => {}); // silent — don't block the page
+  }, []);
 
   const handleDuplicate = async (id: string) => {
     try {
@@ -147,6 +154,7 @@ export default function QuotesPage() {
         open={!!sendId}
         onClose={() => { setSendId(null); setSendQuote(null); }}
         onSend={(id, ch, extra) => handleSend(id, ch, extra)}
+        hasPaymentMethod={hasPaymentMethod}
       />
       <SaveAsTemplateModal
         open={!!saveAsTemplateId}
