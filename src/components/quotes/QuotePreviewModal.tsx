@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Modal from '@/components/ui/Modal';
 import { quotesApi, paymentsApi } from '@/services/api';
-import { formatCurrency, formatDateLong, formatDateTime, quotePublicUrl, copyToClipboard, calcDepositAmount } from '@/lib/utils';
+import { formatCurrency, formatDateLong, formatDateTime, quotePublicUrl, copyToClipboard, calcDepositAmount, getTaxLabel } from '@/lib/utils';
 import { logoStyles } from '@/lib/logoStyles';
 import type { Quote, QuoteNote } from '@/types';
 
@@ -257,7 +257,7 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               <span>{formatCurrency(quote.subtotal, quote.currency)}</span>
             </div>
             <div className="qp-tot-row">
-              <span>{quote.tax_exempt ? `${profile?.tax_type ?? 'GCT'} (Exempt)` : `${profile?.tax_type ?? 'GCT'} (${quote.tax_rate}%)`}</span>
+              <span>{(() => { const lbl = getTaxLabel(profile?.tax_type); return quote.tax_exempt ? (lbl ? `${lbl} (Exempt)` : 'Tax (Exempt)') : (lbl ? `${lbl} (${quote.tax_rate}%)` : `Tax (${quote.tax_rate}%)`); })()}</span>
               <span>{quote.tax_exempt ? '—' : formatCurrency(quote.tax_amount, quote.currency)}</span>
             </div>
             <div className="qp-tot-row final">

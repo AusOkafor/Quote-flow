@@ -1,4 +1,4 @@
-import { formatCurrency, calcTotals } from '@/lib/utils';
+import { formatCurrency, calcTotals, getTaxLabel } from '@/lib/utils';
 import type { LineItemInput, Currency } from '@/types';
 
 interface Props {
@@ -71,7 +71,7 @@ export default function LineItemsEditor({ items, onChange, currency, taxRate, ta
             <span className="tot-val">{formatCurrency(subtotal, currency)}</span>
           </div>
           <div className="tot-row">
-            <span className="tot-label">{taxExempt ? `${taxType} (Exempt)` : `${taxType} (${taxRate}%)`}</span>
+            <span className="tot-label">{(() => { const lbl = getTaxLabel(taxType); return taxExempt ? (lbl ? `${lbl} (Exempt)` : 'Tax (Exempt)') : (lbl ? `${lbl} (${taxRate}%)` : `Tax (${taxRate}%)`); })()}</span>
             <span className="tot-val">{taxExempt ? '—' : formatCurrency(taxAmount, currency)}</span>
           </div>
           <div className="tot-row grand">

@@ -98,3 +98,30 @@ export function calcDepositAmount(deposit: string, total: number): number {
   if (Number.isNaN(pct) || pct <= 0 || pct > 100) return total * 0.5;
   return Math.round(total * (pct / 100) * 100) / 100;
 }
+
+const TAX_LABEL_MAP: Record<string, string> = {
+  GCT:       'GCT',
+  VAT_TT:    'VAT',
+  VAT_BB:    'VAT',
+  VAT_GY:    'VAT',
+  HST:       'HST',
+  GST_CA:    'GST',
+  sales_tax: 'Tax',
+  VAT_UK:    'VAT',
+  VAT_EU:    'VAT',
+  GST_AU:    'GST',
+  GST_NZ:    'GST',
+  GST_IN:    'GST',
+  IVA:       'IVA',
+  VAT:       'VAT',
+  tax:       'Tax',
+  none:      '',
+  // Legacy values stored before the expanded tax type list
+  'VAT-BB':  'VAT',
+  None:      '',
+};
+
+export function getTaxLabel(taxType?: string): string {
+  if (!taxType) return 'Tax';
+  return TAX_LABEL_MAP[taxType] ?? 'Tax';
+}

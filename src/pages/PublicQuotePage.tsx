@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { publicApi } from '@/services/api';
 import { useAppToast } from '@/components/layout/ToastProvider';
-import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount } from '@/lib/utils';
+import { formatCurrency, formatDateLong, formatDateShort, formatDateTime, calcDepositAmount, getTaxLabel } from '@/lib/utils';
 import { messages } from '@/lib/messages';
 import type { QuoteWithDetails, QuoteNote, PaymentProcessor } from '@/types';
 
@@ -489,7 +489,7 @@ export default function PublicQuotePage() {
           <div className="qp-totals">
             <div className="qp-tot-inner">
               <div className="qp-tot-row"><span>Subtotal</span><span>{formatCurrency(quote.subtotal, quote.currency)}</span></div>
-              <div className="qp-tot-row"><span>{quote.creator?.tax_type ?? 'GCT'}</span><span>{quote.tax_exempt ? '—' : formatCurrency(quote.tax_amount, quote.currency)}</span></div>
+              <div className="qp-tot-row"><span>{(() => { const lbl = getTaxLabel(quote.creator?.tax_type); return quote.tax_exempt ? (lbl ? `${lbl} (Exempt)` : 'Tax (Exempt)') : (lbl ? `${lbl} (${quote.tax_rate}%)` : `Tax (${quote.tax_rate}%)`); })()}</span><span>{quote.tax_exempt ? '—' : formatCurrency(quote.tax_amount, quote.currency)}</span></div>
               <div className="qp-tot-row final"><span>Total</span><span className="qp-accent">{formatCurrency(quote.total, quote.currency)}</span></div>
             </div>
           </div>
