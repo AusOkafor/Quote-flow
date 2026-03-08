@@ -20,22 +20,46 @@ export default function RecentQuotes({ quotes, onPreview }: Props) {
           View all →
         </button>
       </div>
-      {recent.length === 0 && (
+      {recent.length === 0 ? (
         <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
-          No quotes yet. <button className="btn btn-dark btn-sm" onClick={() => navigate('/app/create')} style={{ marginLeft: 8 }}>Create one</button>
+          No quotes yet.{' '}
+          <button className="btn btn-dark btn-sm" onClick={() => navigate('/app/create')} style={{ marginLeft: 8 }}>
+            Create one
+          </button>
         </div>
+      ) : (
+        <table className="rq-table">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Title</th>
+              <th style={{ textAlign: 'right' }}>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {recent.map(q => (
+              <tr key={q.id} className="rq-row" onClick={() => onPreview(q.id)}>
+                <td className="rq-client">{q.client?.name ?? '—'}</td>
+                <td className="rq-title">{q.title || '—'}</td>
+                <td className="rq-amount">{formatCurrency(q.total, q.currency)}</td>
+                <td><Badge status={q.status} /></td>
+                <td className="rq-date">{relativeTime(q.created_at)}</td>
+                <td className="rq-action">
+                  <button
+                    className="rq-view-btn"
+                    onClick={e => { e.stopPropagation(); navigate(`/app/quotes/${q.id}`); }}
+                  >
+                    View →
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-      {recent.map(q => (
-        <div className="quote-row" key={q.id} onClick={() => onPreview(q.id)}>
-          <div>
-            <div className="qr-client-name">{q.client?.name ?? '—'}</div>
-            <div className="qr-client-svc">{q.title}</div>
-          </div>
-          <Badge status={q.status} />
-          <div className="qr-amount">{formatCurrency(q.total, q.currency)}</div>
-          <div className="qr-date">{relativeTime(q.created_at)}</div>
-        </div>
-      ))}
     </div>
   );
 }

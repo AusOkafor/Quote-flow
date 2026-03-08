@@ -9,9 +9,20 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
   JMD: 'J$', USD: '$', TTD: 'TT$', BBD: 'Bds$',
 };
 
+export function getCurrencySymbol(currency: string): string {
+  return (CURRENCY_SYMBOLS as Record<string, string>)[currency] ?? currency;
+}
+
 export function formatCurrency(amount: number, currency: Currency = 'JMD'): string {
   const sym = CURRENCY_SYMBOLS[currency] ?? currency;
   return `${sym}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+export function formatCompactCurrency(amount: number, currency: string): string {
+  const sym = getCurrencySymbol(currency);
+  if (amount >= 1_000_000) return `${sym}${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000)     return `${sym}${(amount / 1_000).toFixed(0)}K`;
+  return formatCurrency(amount, currency as Currency);
 }
 
 export function relativeTime(iso: string): string {
