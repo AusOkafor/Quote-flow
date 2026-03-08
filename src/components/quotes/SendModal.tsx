@@ -42,8 +42,8 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend }: Pro
     if (!open) setError(null);
   }, [open, quote?.client?.email, quote?.client?.phone]);
 
-  const handleWhatsAppSend = () => {
-    if (!quote?.share_token) return;
+  const handleWhatsAppSend = async () => {
+    if (!quote?.share_token || !quoteId) return;
     const quoteURL = quotePublicUrl(quote.share_token);
     const clientName = quote.client?.name || 'there';
     const formattedTotal = formatCurrency(quote.total, quote.currency);
@@ -62,13 +62,19 @@ export default function SendModal({ quoteId, quote, open, onClose, onSend }: Pro
       ? `https://wa.me/${normalizedPhone}?text=${message}`
       : `https://wa.me/?text=${message}`;
     window.open(waURL, '_blank');
+    // Mark quote as sent in the backend (fire-and-forget — WA already opened)
+    try {
+      await onSend(quoteId, 'whatsapp', { phone: normalizedPhone || undefined });
+    } catch {
+      // Don't surface error — the WhatsApp message is already open
+    }
     onClose();
   };
 
   const handleSend = async () => {
     if (!quoteId) return;
     if (channel === 'whatsapp') {
-      handleWhatsAppSend();
+      void handleWhatsAppSend();
       return;
     }
     setLoading(true);

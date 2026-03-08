@@ -46,11 +46,6 @@ export default function PublicQuotePage() {
     publicApi.getNotes(token).then(setNotes).catch(() => {});
   }, [token, quote]);
 
-  useEffect(() => {
-    if (quote?.creator?.logo_url) {
-      console.log('[Logo] url:', quote.creator.logo_url);
-    }
-  }, [quote?.creator?.logo_url]);
 
   useEffect(() => {
     if (quote?.creator?.default_payment_timing === 'full') setPaymentType('full');
@@ -424,6 +419,9 @@ export default function PublicQuotePage() {
               {(quote.creator?.logo_url || !quote.creator?.white_label) && (
                 <div className="qp-biz">{quote.creator?.business_name || 'Professional Quote'}</div>
               )}
+              {quote.creator?.tax_number && (
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Tax Reg. No: {quote.creator.tax_number}</div>
+              )}
             </div>
             <div className="qp-meta">
               <div className="qp-num">{quote.quote_number}</div>
@@ -491,7 +489,7 @@ export default function PublicQuotePage() {
           <div className="qp-totals">
             <div className="qp-tot-inner">
               <div className="qp-tot-row"><span>Subtotal</span><span>{formatCurrency(quote.subtotal, quote.currency)}</span></div>
-              <div className="qp-tot-row"><span>GCT</span><span>{quote.tax_exempt ? '—' : formatCurrency(quote.tax_amount, quote.currency)}</span></div>
+              <div className="qp-tot-row"><span>{quote.creator?.tax_type ?? 'GCT'}</span><span>{quote.tax_exempt ? '—' : formatCurrency(quote.tax_amount, quote.currency)}</span></div>
               <div className="qp-tot-row final"><span>Total</span><span className="qp-accent">{formatCurrency(quote.total, quote.currency)}</span></div>
             </div>
           </div>

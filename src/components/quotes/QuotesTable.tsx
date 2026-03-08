@@ -26,6 +26,7 @@ const TABS = [
   { label: 'Draft',    value: 'draft'    },
   { label: 'Sent',     value: 'sent'     },
   { label: 'Accepted', value: 'accepted' },
+  { label: 'Declined', value: 'declined' },
   { label: 'Expired',  value: 'expired'  },
 ];
 

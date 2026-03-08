@@ -50,11 +50,18 @@ export default function DashboardPage() {
     ? '—'
     : formatCurrency(stats?.avg_quote_value ?? 0, displayCurrency ?? 'JMD');
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <>
       <Topbar
         title="Dashboard"
-        subtitle="Good morning 👋"
+        subtitle={`${getGreeting()} 👋`}
         actions={
           <>
             {displayCurrency && <span style={{ fontSize: 13, color: 'var(--muted)' }}>{displayCurrency}</span>}

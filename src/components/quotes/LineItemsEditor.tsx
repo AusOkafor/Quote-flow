@@ -7,9 +7,10 @@ interface Props {
   currency: Currency;
   taxRate: number;
   taxExempt: boolean;
+  taxType?: string;
 }
 
-export default function LineItemsEditor({ items, onChange, currency, taxRate, taxExempt }: Props) {
+export default function LineItemsEditor({ items, onChange, currency, taxRate, taxExempt, taxType = 'GCT' }: Props) {
   const update = (i: number, field: keyof LineItemInput, value: string | number) => {
     const next = items.map((item, idx) => idx === i ? { ...item, [field]: field === 'description' ? value : Number(value) } : item);
     onChange(next);
@@ -70,7 +71,7 @@ export default function LineItemsEditor({ items, onChange, currency, taxRate, ta
             <span className="tot-val">{formatCurrency(subtotal, currency)}</span>
           </div>
           <div className="tot-row">
-            <span className="tot-label">{taxExempt ? 'GCT (Exempt)' : `GCT (${taxRate}%)`}</span>
+            <span className="tot-label">{taxExempt ? `${taxType} (Exempt)` : `${taxType} (${taxRate}%)`}</span>
             <span className="tot-val">{taxExempt ? '—' : formatCurrency(taxAmount, currency)}</span>
           </div>
           <div className="tot-row grand">

@@ -16,8 +16,8 @@ interface Props {
   onNotesRead?: () => void;
   toast?: (msg: string, type?: 'success' | 'info' | 'warning' | 'default') => void;
   loading?: boolean;
-  /** Profile for logo/business name/brand color (in-app preview) */
-  profile?: { logo_url?: string | null; business_name?: string; brand_color?: string };
+  /** Profile for logo/business name/brand color/tax info (in-app preview) */
+  profile?: { logo_url?: string | null; business_name?: string; brand_color?: string; tax_type?: string; tax_number?: string };
 }
 
 export default function QuotePreviewModal({ quote, open, onClose, onSend, onMarkPaid, onNotesRead, toast, loading, profile }: Props) {
@@ -148,6 +148,9 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               <div className="qp-brand">Quote<span className="qp-accent">Flow</span></div>
             )}
             <div className="qp-biz">{profile?.business_name || 'Professional Quote'}</div>
+            {profile?.tax_number && (
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Tax Reg. No: {profile.tax_number}</div>
+            )}
           </div>
           <div className="qp-meta">
             <div className="qp-num">{quote.quote_number}</div>
@@ -254,7 +257,7 @@ export default function QuotePreviewModal({ quote, open, onClose, onSend, onMark
               <span>{formatCurrency(quote.subtotal, quote.currency)}</span>
             </div>
             <div className="qp-tot-row">
-              <span>{quote.tax_exempt ? 'GCT (Exempt)' : `GCT (${quote.tax_rate}%)`}</span>
+              <span>{quote.tax_exempt ? `${profile?.tax_type ?? 'GCT'} (Exempt)` : `${profile?.tax_type ?? 'GCT'} (${quote.tax_rate}%)`}</span>
               <span>{quote.tax_exempt ? '—' : formatCurrency(quote.tax_amount, quote.currency)}</span>
             </div>
             <div className="qp-tot-row final">

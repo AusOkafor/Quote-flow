@@ -21,7 +21,6 @@ export default function ProfilePanel({ profile, onChange, onSaveImmediate, onErr
   const [uploading, setUploading] = useState(false);
 
   const handleReplaceLogo = () => {
-    console.log('[Logo] replace clicked');
     if (uploading) return;
     inputRef.current?.click();
   };
@@ -29,7 +28,6 @@ export default function ProfilePanel({ profile, onChange, onSaveImmediate, onErr
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    console.log('[Logo] file selected:', file.name);
     e.target.value = ''; // reset so same file can be selected again
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -56,7 +54,6 @@ export default function ProfilePanel({ profile, onChange, onSaveImmediate, onErr
       const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(path);
       // Cache-bust for immediate display (same path = cached old image)
       const logoUrlForDisplay = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
-      console.log('[Logo] upload success, url:', publicUrl);
       onChange({ logo_url: logoUrlForDisplay });
       // Persist to database immediately so logo survives refresh
       if (onSaveImmediate) {
@@ -76,7 +73,6 @@ export default function ProfilePanel({ profile, onChange, onSaveImmediate, onErr
   };
 
   const handleRemoveLogo = async () => {
-    console.log('[Logo] remove clicked');
     onChange({ logo_url: null });
     if (onSaveImmediate) {
       try {

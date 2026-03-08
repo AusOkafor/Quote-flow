@@ -150,6 +150,8 @@ export interface QuoteWithDetails extends Quote {
     stripe_connected?: boolean;
     wipay_connected?: boolean;
     paypal_connected?: boolean;
+    tax_type?: string;
+    tax_number?: string;
   };
   payment_processors?: PaymentProcessor[];
 }

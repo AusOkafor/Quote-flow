@@ -1,4 +1,4 @@
-import { useState, Fragment, useEffect } from 'react';
+import { useState, Fragment, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Topbar             from '@/components/layout/Topbar';
 import Toggle             from '@/components/ui/Toggle';
@@ -47,6 +47,8 @@ export default function CreateQuotePage() {
   const [templates, setTemplates] = useState<QuoteTemplate[]>([]);
   const [items, setItems]         = useState<LineItemInput[]>([{ description: '', quantity: 1, unit_price: 0 }]);
   const [savedQuote, setSavedQuote] = useState<QuoteWithDetails | null>(null);
+  const [isDirty, setIsDirty]     = useState(false);
+  const profileDefaultsApplied    = useRef(false);
   const [form, setForm]       = useState<FormState>({
     client_id: '', title: '', currency: 'JMD',
     validity_days: 14, notes: '', deposit: '50% upfront',
@@ -55,12 +57,48 @@ export default function CreateQuotePage() {
     require_signature: true, track_views: true, send_reminder: false,
   });
 
-  const set = <K extends keyof FormState>(key: K, val: FormState[K]) =>
+  const set = <K extends keyof FormState>(key: K, val: FormState[K]) => {
     setForm(prev => ({ ...prev, [key]: val }));
+    if (!isEdit) setIsDirty(true);
+  };
 
   useEffect(() => {
     templatesApi.list().then(setTemplates).catch(() => {});
   }, []);
+
+  // Auto-save draft 30s after last change (new quotes only)
+  useEffect(() => {
+    if (!isDirty || isEdit) return;
+    const timer = setTimeout(async () => {
+      if (!form.client_id || !form.title) return;
+      try {
+        await quotesApi.create({ ...form, line_items: items });
+        setIsDirty(false);
+        toast(messages.createQuote.draftSaved, 'info');
+      } catch {
+        // Silent — don't interrupt the user
+      }
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [form, items, isDirty, isEdit]);
+
+  // Apply profile defaults once when profile loads for a new quote
+  useEffect(() => {
+    if (!profile || isEdit || profileDefaultsApplied.current) return;
+    profileDefaultsApplied.current = true;
+    setForm(prev => ({
+      ...prev,
+      currency:          (profile.default_currency as FormState['currency']) || prev.currency,
+      validity_days:     profile.default_validity_days || prev.validity_days,
+      deposit:           profile.default_deposit       || prev.deposit,
+      payment_method:    profile.default_payment       || prev.payment_method,
+      delivery_timeline: prev.delivery_timeline,
+      revisions:         profile.default_revisions     || prev.revisions,
+      notes:             profile.default_notes         || prev.notes,
+      tax_rate:          profile.tax_rate               ?? prev.tax_rate,
+      tax_exempt:        profile.tax_exempt_default     ?? prev.tax_exempt,
+    }));
+  }, [profile, isEdit]);
 
   useEffect(() => {
     if (profile && !isPro && form.track_views) setForm(prev => ({ ...prev, track_views: false }));
@@ -208,7 +246,6 @@ export default function CreateQuotePage() {
         title={isEdit ? messages.createQuote.editTitle : messages.createQuote.newTitle}
         actions={
           <>
-            {!isEdit && <button className="btn btn-outline" onClick={() => toast(messages.createQuote.draftSaved, 'info')}>{messages.createQuote.saveDraft}</button>}
             <button className="btn btn-ghost" onClick={() => navigate('/app/quotes')}>{messages.createQuote.cancel}</button>
           </>
         }
@@ -305,10 +342,11 @@ export default function CreateQuotePage() {
               <div className="flow-sub">{messages.createQuote.addLineItems}</div>
               <LineItemsEditor
                 items={items}
-                onChange={setItems}
+                onChange={items => { setItems(items); if (!isEdit) setIsDirty(true); }}
                 currency={form.currency}
                 taxRate={form.tax_rate}
                 taxExempt={form.tax_exempt}
+                taxType={profile?.tax_type}
               />
               <div className="flow-foot">
                 <button className="btn btn-outline" onClick={() => setStep(1)}>{messages.createQuote.back}</button>
