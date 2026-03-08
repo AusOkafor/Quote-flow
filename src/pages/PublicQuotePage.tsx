@@ -241,7 +241,6 @@ export default function PublicQuotePage() {
   const showBalancePayment = hasPaymentSection && isDepositPaid;
   const depositAmount = calcDepositAmount(quote.deposit || '50%', quote.total);
   const balanceAmount = Math.round((quote.total - depositAmount) * 100) / 100;
-  const isUsd = quote.currency === 'USD';
 
   // Expiry countdown
   const today = new Date();
