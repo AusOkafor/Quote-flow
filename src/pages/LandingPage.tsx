@@ -16,7 +16,7 @@ export default function LandingPage() {
       </nav>
       <div className="land-hero">
         <div className="land-badge">
-          <div className="land-badge-dot" /> Now live across Caribbean &amp; Latin America
+          <div className="land-badge-dot" /> Built for the Caribbean. Works worldwide.
         </div>
         <h1 className="land-h1">
           Win more clients with<br />
@@ -39,7 +39,7 @@ export default function LandingPage() {
           {[
             { num: '5 min',     label: 'Avg. quote time' },
             { num: '3×',        label: 'More client responses' },
-            { num: 'JMD / USD', label: 'Multi-currency' },
+            { num: 'Multi-currency', label: 'JMD, USD, TTD, GBP & more' },
             { num: 'GCT ready', label: 'Local tax support' },
           ].map(s => (
             <div className="stat-item" key={s.label}>
@@ -91,7 +91,7 @@ export default function LandingPage() {
           <div className="feature-card">
             <div className="feature-icon">💳</div>
             <h3>Local Payments</h3>
-            <p>Accept JMD, TTD, and BBD via WiPay. Your clients pay in their currency — you get paid faster.</p>
+            <p>Accept JMD, TTD, and BBD via WiPay — plus Stripe and PayPal for international clients. Get paid in your currency, wherever your client is.</p>
           </div>
           <div className="feature-card">
             <div className="feature-icon">✍️</div>
@@ -201,7 +201,7 @@ export default function LandingPage() {
 
       <section className="final-cta">
         <h2>Ready to win more clients?</h2>
-        <p>Join freelancers and small businesses across the Caribbean. Start sending professional quotes today — it&apos;s free.</p>
+        <p>Join freelancers and small businesses across the Caribbean and beyond. Start sending professional quotes today — it&apos;s free.</p>
         <button type="button" className="btn-primary large" onClick={() => navigate('/login')}>
           Create your first quote — free
         </button>
@@ -235,7 +235,7 @@ export default function LandingPage() {
         </div>
         <div className="footer-bottom">
           <p>© 2026 QuoteFlow. All rights reserved.</p>
-          <p className="footer-caribbean">Built for the Caribbean 🌴</p>
+          <p className="footer-caribbean">Built in the Caribbean. Used worldwide. 🌴</p>
         </div>
       </footer>
     </div>
