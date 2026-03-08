@@ -227,10 +227,17 @@ export default function PublicQuotePage() {
 
   const items = quote.line_items ?? [];
   const accent = quote.creator?.brand_color || 'var(--accent)';
-  const processors = quote.payment_processors ?? [];
   const isFullyPaid = !!(quote.fully_paid_at || quote.paid_at);
   const isDepositPaid = !!quote.deposit_paid_at;
-  const hasPaymentSection = processors.length > 0 && (accepted || quote.status === 'accepted') && !isFullyPaid;
+  const WIPAY_CURRENCIES = ['JMD', 'TTD', 'BBD', 'GYD'];
+  const isWiPayCurrency = WIPAY_CURRENCIES.includes(quote.currency);
+  const hasStripe = !!quote.creator?.stripe_connected;
+  const hasWiPay = !!quote.creator?.wipay_connected;
+  const hasPayPal = !!quote.creator?.paypal_connected;
+  const showWiPay = hasWiPay && isWiPayCurrency;
+  const showStripe = hasStripe && !isWiPayCurrency;
+  const showPayPal = hasPayPal && !isWiPayCurrency;
+  const hasPaymentSection = (showWiPay || showStripe || showPayPal) && (accepted || quote.status === 'accepted') && !isFullyPaid;
   const showBalancePayment = hasPaymentSection && isDepositPaid;
   const depositAmount = calcDepositAmount(quote.deposit || '50%', quote.total);
   const balanceAmount = Math.round((quote.total - depositAmount) * 100) / 100;
@@ -310,20 +317,25 @@ export default function PublicQuotePage() {
                 {messages.publicQuote.balanceDue(formatCurrency(balanceAmount, quote.currency))}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {processors.includes('stripe') && (
+                {showStripe && (
                   <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('stripe', 'balance')} disabled={!!paymentLoading}>
                     {paymentLoading === 'stripe' ? messages.loading.redirecting : messages.publicQuote.payBalanceWithStripe}
                   </button>
                 )}
-                {processors.includes('paypal') && isUsd && (
+                {showPayPal && (
                   <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('paypal', 'balance')} disabled={!!paymentLoading}>
                     {paymentLoading === 'paypal' ? messages.loading.redirecting : messages.publicQuote.payBalanceWithPayPal}
                   </button>
                 )}
-                {processors.includes('wipay') && (
+                {showWiPay && (
                   <button className="btn btn-dark" style={{ width: '100%' }} onClick={() => void handlePay('wipay', 'balance')} disabled={!!paymentLoading}>
                     {paymentLoading === 'wipay' ? messages.loading.redirecting : messages.publicQuote.payBalanceWithWiPay(quote.currency)}
                   </button>
+                )}
+                {!showWiPay && !showStripe && !showPayPal && (
+                  <p className="no-payment-method" style={{ fontSize: 14, color: 'var(--muted)', margin: 0 }}>
+                    Contact us to arrange payment.
+                  </p>
                 )}
               </div>
             </>
@@ -355,20 +367,25 @@ export default function PublicQuotePage() {
                 </div>
               </div>
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 16 }}>
-                {processors.includes('stripe') && (
+                {showStripe && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('stripe')} disabled={!!paymentLoading}>
                     {paymentLoading === 'stripe' ? messages.loading.redirecting : messages.publicQuote.payWithStripe}
                   </button>
                 )}
-                {processors.includes('paypal') && isUsd && (
+                {showPayPal && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('paypal')} disabled={!!paymentLoading}>
                     {paymentLoading === 'paypal' ? messages.loading.redirecting : messages.publicQuote.payWithPayPal}
                   </button>
                 )}
-                {processors.includes('wipay') && (
+                {showWiPay && (
                   <button className="btn btn-dark" style={{ width: '100%', marginBottom: 10 }} onClick={() => void handlePay('wipay')} disabled={!!paymentLoading}>
                     {paymentLoading === 'wipay' ? messages.loading.redirecting : messages.publicQuote.payWithWiPay(quote.currency)}
                   </button>
+                )}
+                {!showWiPay && !showStripe && !showPayPal && (
+                  <p className="no-payment-method" style={{ fontSize: 14, color: 'var(--muted)', margin: 0 }}>
+                    Contact us to arrange payment.
+                  </p>
                 )}
               </div>
               {paymentError && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{paymentError}</div>}

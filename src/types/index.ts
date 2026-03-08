@@ -147,6 +147,9 @@ export interface QuoteWithDetails extends Quote {
     white_label?: boolean;
     freelancer_plan?: string;
     default_payment_timing?: 'full' | 'deposit' | 'link_only';
+    stripe_connected?: boolean;
+    wipay_connected?: boolean;
+    paypal_connected?: boolean;
   };
   payment_processors?: PaymentProcessor[];
 }
