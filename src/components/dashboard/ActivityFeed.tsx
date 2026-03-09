@@ -114,7 +114,7 @@ export default function ActivityFeed({ items }: Props) {
             <div
               key={item.id}
               className={`activity-item${item.quote_id ? ' act-clickable' : ''}`}
-              onClick={item.quote_id ? () => navigate(`/app/quotes/${item.quote_id}`) : undefined}
+              onClick={item.quote_id ? () => navigate(`/app/quotes/${item.quote_id}/edit`) : undefined}
             >
               <ActivityIcon type={item.type} />
               <div style={{ flex: 1, minWidth: 0 }}>

@@ -50,7 +50,7 @@ export default function RecentQuotes({ quotes, onPreview }: Props) {
                 <td className="rq-action">
                   <button
                     className="rq-view-btn"
-                    onClick={e => { e.stopPropagation(); navigate(`/app/quotes/${q.id}`); }}
+                    onClick={e => { e.stopPropagation(); navigate(`/app/quotes/${q.id}/edit`); }}
                   >
                     View →
                   </button>
