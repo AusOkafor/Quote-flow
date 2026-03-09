@@ -7,6 +7,14 @@ interface Props {
 
 const CURRENCIES: Currency[] = ['JMD', 'USD', 'TTD', 'BBD'];
 
+export const DEPOSIT_OPTIONS = [
+  '50% upfront',
+  '30% deposit',
+  '75% upfront',
+  '100% upfront',
+  'No deposit',
+] as const;
+
 export default function DefaultsPanel({ profile, onChange }: Props) {
   return (
     <>
@@ -25,7 +33,9 @@ export default function DefaultsPanel({ profile, onChange }: Props) {
         </div>
         <div className="form-group">
           <label>Default Deposit</label>
-          <input value={profile.default_deposit} onChange={e => onChange({ default_deposit: e.target.value })} placeholder="50% upfront" />
+          <select value={profile.default_deposit || '50% upfront'} onChange={e => onChange({ default_deposit: e.target.value })}>
+            {DEPOSIT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
         </div>
         <div className="form-group">
           <label>Default Revisions</label>

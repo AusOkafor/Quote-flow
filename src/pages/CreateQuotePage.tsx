@@ -9,6 +9,7 @@ import { useProfile }     from '@/hooks/useProfile';
 import { quotesApi, templatesApi, paymentsApi, isFreeTierLimitError, isProRequiredError } from '@/services/api';
 import { useAppToast }    from '@/components/layout/ToastProvider';
 import { calcTotals, copyToClipboard } from '@/lib/utils';
+import { DEPOSIT_OPTIONS } from '@/components/settings/DefaultsPanel';
 import { messages } from '@/lib/messages';
 import type { LineItemInput, Currency, QuoteTemplate, QuoteWithDetails } from '@/types';
 
@@ -415,7 +416,7 @@ export default function CreateQuotePage() {
                 <div className="form-group">
                   <label>{messages.createQuote.depositRequired}</label>
                   <select value={form.deposit} onChange={e => set('deposit', e.target.value)}>
-                    {['50% upfront','100% upfront','30% deposit','No deposit'].map(o => <option key={o} value={o}>{o}</option>)}
+                    {DEPOSIT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
