@@ -29,10 +29,16 @@ export function useClients() {
     return c;
   };
 
+  const update = async (id: string, data: Partial<CreateClientRequest>): Promise<Client> => {
+    const updated = await clientsApi.update(id, data);
+    setClients(prev => prev.map(c => c.id === id ? { ...c, ...updated } : c));
+    return updated;
+  };
+
   const remove = async (id: string): Promise<void> => {
     await clientsApi.delete(id);
     setClients(prev => prev.filter(c => c.id !== id));
   };
 
-  return { clients, loading, error, reload: load, create, delete: remove };
+  return { clients, loading, error, reload: load, create, update, delete: remove };
 }

@@ -5,23 +5,29 @@ import AddClientModal   from '@/components/modals/AddClientModal';
 import DeleteClientModal from '@/components/modals/DeleteClientModal';
 import { useClients }   from '@/hooks/useClients';
 import { useAppToast }  from '@/components/layout/ToastProvider';
-import type { Client }  from '@/types';
+import type { Client, CreateClientRequest }  from '@/types';
 
 export default function ClientsPage() {
   const toast = useAppToast();
-  const { clients, loading, error, create, delete: deleteClient } = useClients();
-  const [showAdd, setShowAdd] = useState(false);
+  const { clients, loading, error, create, update, delete: deleteClient } = useClients();
+
+  const [showAdd,       setShowAdd]       = useState(false);
+  const [clientToEdit,  setClientToEdit]  = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
 
-  const handleAdd = async (data: Parameters<typeof create>[0]) => {
+  const handleAdd = async (data: CreateClientRequest) => {
     await create(data);
-    toast('✅ Client added!', 'success');
+    toast('Client added!', 'success');
   };
 
-  const handleDeleteClick = (client: Client) => {
-    setClientToDelete(client);
+  const handleEditSave = async (data: CreateClientRequest) => {
+    if (!clientToEdit) return;
+    await update(clientToEdit.id, data);
+    toast('Client updated!', 'success');
   };
+
+  const handleDeleteClick = (client: Client) => setClientToDelete(client);
 
   const handleDeleteConfirm = async () => {
     if (!clientToDelete) return;
@@ -29,7 +35,7 @@ export default function ClientsPage() {
     try {
       await deleteClient(clientToDelete.id);
       setClientToDelete(null);
-      toast('✅ Client removed', 'success');
+      toast('Client removed', 'success');
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Failed to delete client', 'warning');
     } finally {
@@ -65,6 +71,7 @@ export default function ClientsPage() {
                 key={c.id}
                 client={c}
                 onClick={() => {}}
+                onEdit={() => setClientToEdit(c)}
                 onDelete={() => handleDeleteClick(c)}
                 deleteDisabled={deleting}
               />
@@ -72,7 +79,24 @@ export default function ClientsPage() {
           </div>
         )}
       </div>
-      <AddClientModal open={showAdd} onClose={() => setShowAdd(false)} onSave={handleAdd} onError={msg => toast(msg, 'warning')} />
+
+      {/* Add modal */}
+      <AddClientModal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        onSave={handleAdd}
+        onError={msg => toast(msg, 'warning')}
+      />
+
+      {/* Edit modal — reuses AddClientModal in edit mode */}
+      <AddClientModal
+        open={!!clientToEdit}
+        client={clientToEdit}
+        onClose={() => setClientToEdit(null)}
+        onSave={handleEditSave}
+        onError={msg => toast(msg, 'warning')}
+      />
+
       <DeleteClientModal
         open={!!clientToDelete}
         client={clientToDelete}

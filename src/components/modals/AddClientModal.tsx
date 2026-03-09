@@ -1,22 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import type { CreateClientRequest } from '@/types';
+import type { Client, CreateClientRequest } from '@/types';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onSave: (data: CreateClientRequest) => Promise<void>;
   onError?: (message: string) => void;
+  /** When provided the modal switches to edit mode */
+  client?: Client | null;
 }
 
 const EMPTY: CreateClientRequest = {
   name: '', company: '', email: '', phone: '', address: '', notes: '',
 };
 
-export default function AddClientModal({ open, onClose, onSave, onError }: Props) {
-  const [form, setForm]     = useState<CreateClientRequest>(EMPTY);
+export default function AddClientModal({ open, onClose, onSave, onError, client }: Props) {
+  const isEdit = !!client;
+
+  const [form, setForm]       = useState<CreateClientRequest>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors]   = useState<Partial<CreateClientRequest>>({});
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (open && client) {
+      setForm({
+        name:    client.name    ?? '',
+        company: client.company ?? '',
+        email:   client.email   ?? '',
+        phone:   client.phone   ?? '',
+        address: client.address ?? '',
+        notes:   client.notes   ?? '',
+      });
+    } else if (open && !client) {
+      setForm(EMPTY);
+    }
+    setErrors({});
+  }, [open, client]);
 
   const set = (key: keyof CreateClientRequest, val: string) =>
     setForm(prev => ({ ...prev, [key]: val }));
@@ -38,7 +59,7 @@ export default function AddClientModal({ open, onClose, onSave, onError }: Props
       setErrors({});
       onClose();
     } catch (e) {
-      onError?.(e instanceof Error ? e.message : 'Failed to add client');
+      onError?.(e instanceof Error ? e.message : isEdit ? 'Failed to update client' : 'Failed to add client');
     } finally {
       setLoading(false);
     }
@@ -47,8 +68,12 @@ export default function AddClientModal({ open, onClose, onSave, onError }: Props
   return (
     <Modal open={open} onClose={onClose} maxWidth={560}>
       <div className="modal-inner">
-        <div className="modal-title">Add New Client</div>
-        <div className="modal-sub">Save a client to reuse their details across quotes.</div>
+        <div className="modal-title">{isEdit ? 'Edit Client' : 'Add New Client'}</div>
+        <div className="modal-sub">
+          {isEdit
+            ? 'Update this client\'s contact information.'
+            : 'Save a client to reuse their details across quotes.'}
+        </div>
 
         <div className="form-grid">
           <div className="form-group">
@@ -82,7 +107,7 @@ export default function AddClientModal({ open, onClose, onSave, onError }: Props
         <div className="modal-foot">
           <button className="btn btn-outline" onClick={onClose}>Cancel</button>
           <button className="btn btn-dark" onClick={() => void handleSave()} disabled={loading}>
-            {loading ? 'Saving…' : 'Add Client'}
+            {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Client'}
           </button>
         </div>
       </div>
