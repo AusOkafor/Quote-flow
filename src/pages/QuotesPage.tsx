@@ -54,6 +54,14 @@ export default function QuotesPage() {
     }
   };
 
+  const handleBulkDelete = async (ids: string[]) => {
+    const results = await Promise.allSettled(ids.map(id => remove(id)));
+    const failed  = results.filter(r => r.status === 'rejected').length;
+    const deleted = ids.length - failed;
+    if (deleted > 0) toast(`${deleted} quote${deleted !== 1 ? 's' : ''} deleted.`, 'warning');
+    if (failed  > 0) toast(`${failed} quote${failed  !== 1 ? 's' : ''} could not be deleted.`, 'warning');
+  };
+
   const handleSend = async (id: string, channel: SendChannel, extra?: { email?: string; phone?: string }) => {
     const result = await quotesApi.send(id, { channel, recipient_email: extra?.email, recipient_phone: extra?.phone });
     const msg = channel === 'link' ? messages.toast.linkCopiedSuccess : messages.toast.sentVia(channel);
@@ -122,6 +130,7 @@ export default function QuotesPage() {
           }}
           onDuplicate={id => void handleDuplicate(id)}
           onDelete={id => void handleDelete(id)}
+          onBulkDelete={ids => handleBulkDelete(ids)}
           onSend={id => setSendId(id)}
           onEdit={id => navigate(`/app/quotes/${id}/edit`)}
           onSaveAsTemplate={id => setSaveAsTemplateId(id)}

@@ -13,11 +13,12 @@ function PaymentIndicator({ quote }: { quote: Quote }) {
 
 interface Props {
   quotes: Quote[];
-  onPreview:       (id: string) => void;
-  onDuplicate:    (id: string) => void;
-  onDelete:       (id: string) => void;
-  onSend:         (id: string) => void;
-  onEdit:         (id: string) => void;
+  onPreview:          (id: string) => void;
+  onDuplicate:       (id: string) => void;
+  onDelete:          (id: string) => void;
+  onBulkDelete:      (ids: string[]) => Promise<void>;
+  onSend:            (id: string) => void;
+  onEdit:            (id: string) => void;
   onSaveAsTemplate?: (id: string) => void;
 }
 
@@ -30,13 +31,17 @@ const TABS = [
   { label: 'Expired',  value: 'expired'  },
 ];
 
-export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, onSend, onEdit, onSaveAsTemplate }: Props) {
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [dotsId, setDotsId] = useState<string | null>(null);
-  const [dotsPos, setDotsPos] = useState({ top: 0, left: 0 });
+export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, onBulkDelete, onSend, onEdit, onSaveAsTemplate }: Props) {
+  const [filter, setFilter]     = useState('all');
+  const [search, setSearch]     = useState('');
+  const [dotsId, setDotsId]     = useState<string | null>(null);
+  const [dotsPos, setDotsPos]   = useState({ top: 0, left: 0 });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setDotsId(null);
@@ -44,6 +49,9 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
     if (dotsId) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [dotsId]);
+
+  // Clear selection when filter or search changes
+  useEffect(() => { setSelected(new Set()); setConfirmBulk(false); }, [filter, search]);
 
   const filtered = quotes.filter(q => {
     const matchStatus = filter === 'all' || q.status === filter;
@@ -53,6 +61,36 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
   });
 
   const count = (s: string) => s === 'all' ? quotes.length : quotes.filter(q => q.status === s).length;
+
+  const allChecked  = filtered.length > 0 && filtered.every(q => selected.has(q.id));
+  const someChecked = filtered.some(q => selected.has(q.id));
+
+  const toggleAll = () => {
+    if (allChecked) {
+      setSelected(prev => { const s = new Set(prev); filtered.forEach(q => s.delete(q.id)); return s; });
+    } else {
+      setSelected(prev => { const s = new Set(prev); filtered.forEach(q => s.add(q.id)); return s; });
+    }
+    setConfirmBulk(false);
+  };
+
+  const toggleOne = (id: string) => {
+    setSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+    setConfirmBulk(false);
+  };
+
+  const clearSelection = () => { setSelected(new Set()); setConfirmBulk(false); };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      await onBulkDelete([...selected]);
+      setSelected(new Set());
+      setConfirmBulk(false);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   const openDots = (e: React.MouseEvent<HTMLButtonElement>, id: string) => {
     e.stopPropagation();
@@ -71,6 +109,7 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
 
   return (
     <>
+      {/* Search bar */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
         <div className="search-bar" style={{ flex: 1, minWidth: 200 }}>
           <span>🔍</span>
@@ -78,6 +117,7 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
         </div>
       </div>
 
+      {/* Tab bar */}
       <div className="tab-bar">
         {TABS.map(tab => (
           <button key={tab.value} className={`tab${filter === tab.value ? ' active' : ''}`} onClick={() => setFilter(tab.value)}>
@@ -86,10 +126,52 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
         ))}
       </div>
 
+      {/* Bulk action bar — visible only when rows are selected */}
+      {selected.size > 0 && (
+        <div className="bulk-bar">
+          {confirmBulk ? (
+            <>
+              <span className="bulk-bar-confirm">
+                Delete {selected.size} quote{selected.size !== 1 ? 's' : ''} permanently? This cannot be undone.
+              </span>
+              <button className="bulk-btn bulk-btn-ghost" onClick={() => setConfirmBulk(false)} disabled={bulkDeleting}>
+                Cancel
+              </button>
+              <button className="bulk-btn bulk-btn-danger" onClick={() => void handleBulkDelete()} disabled={bulkDeleting}>
+                {bulkDeleting ? 'Deleting…' : `Yes, Delete ${selected.size}`}
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="bulk-bar-count">
+                {selected.size} quote{selected.size !== 1 ? 's' : ''} selected
+              </span>
+              <button className="bulk-btn bulk-btn-ghost" onClick={clearSelection}>
+                Clear
+              </button>
+              <button className="bulk-btn bulk-btn-danger" onClick={() => setConfirmBulk(true)}>
+                Delete selected
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Table */}
       <div className="card">
         <table className="quotes-table">
           <thead>
             <tr>
+              <th style={{ width: 44, paddingLeft: 16, paddingRight: 0 }}>
+                <input
+                  type="checkbox"
+                  className="qt-checkbox"
+                  checked={allChecked}
+                  ref={el => { if (el) el.indeterminate = someChecked && !allChecked; }}
+                  onChange={toggleAll}
+                  title={allChecked ? 'Deselect all' : 'Select all'}
+                />
+              </th>
               <th style={{ width: 70 }}>#</th>
               <th>Client</th>
               <th>Service</th>
@@ -103,12 +185,24 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: 52, color: 'var(--muted)' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: 52, color: 'var(--muted)' }}>
                   {search ? messages.empty.noResults : messages.empty.noQuotesYet}
                 </td>
               </tr>
             ) : filtered.map(q => (
-              <tr key={q.id} onClick={() => onPreview(q.id)}>
+              <tr
+                key={q.id}
+                onClick={() => onPreview(q.id)}
+                className={selected.has(q.id) ? 'qt-row-selected' : ''}
+              >
+                <td style={{ paddingLeft: 16, paddingRight: 0 }} onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    className="qt-checkbox"
+                    checked={selected.has(q.id)}
+                    onChange={() => toggleOne(q.id)}
+                  />
+                </td>
                 <td>
                   <span className="qt-num" style={{ position: 'relative' }}>
                     {q.quote_number}
@@ -116,12 +210,8 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
                       <span
                         title="Unread client message"
                         style={{
-                          position: 'absolute',
-                          top: -2,
-                          right: -8,
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
+                          position: 'absolute', top: -2, right: -8,
+                          width: 8, height: 8, borderRadius: '50%',
                           background: 'var(--danger)',
                         }}
                       />
@@ -147,6 +237,7 @@ export default function QuotesTable({ quotes, onPreview, onDuplicate, onDelete, 
         </table>
       </div>
 
+      {/* Single-quote dots menu */}
       {dotsId && (
         <div ref={menuRef} style={{ position: 'fixed', top: dotsPos.top, left: dotsPos.left, background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 11, minWidth: 200, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,.14)', overflow: 'hidden' }}>
           {dotActions.map(item => (

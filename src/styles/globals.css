@@ -225,6 +225,25 @@ textarea { resize: vertical; min-height: 88px; }
 .act-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .notif-badge { display: inline-block; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-left: 4px; vertical-align: middle; }
 
+/* ── Bulk action bar ── */
+.bulk-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--ink); color: var(--paper);
+  border-radius: 10px; padding: 10px 16px; margin-bottom: 12px;
+  animation: toastIn .2s ease;
+}
+.bulk-bar-count   { font-size: 13px; font-weight: 500; flex: 1; }
+.bulk-bar-confirm { font-size: 13px; flex: 1; color: rgba(245,242,236,.85); }
+.bulk-btn {
+  padding: 6px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; border: none;
+}
+.bulk-btn:disabled { opacity: .55; cursor: not-allowed; }
+.bulk-btn-ghost  { background: rgba(255,255,255,.1); color: var(--paper); }
+.bulk-btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,.18); }
+.bulk-btn-danger { background: var(--danger); color: #fff; }
+.bulk-btn-danger:hover:not(:disabled) { background: #c93333; }
+
 /* ── Quotes Table ── */
 .tab-bar { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
 .tab { padding: 8px 14px; border-radius: 8px; font-size: 12.5px; cursor: pointer; border: none; background: transparent; color: var(--muted); font-family: 'DM Sans', sans-serif; transition: all .15s; }
@@ -240,6 +259,12 @@ textarea { resize: vertical; min-height: 88px; }
 .quotes-table tbody tr { cursor: pointer; transition: background .14s; }
 .quotes-table tbody tr:hover { background: var(--cream); }
 .quotes-table tbody tr:last-child td { border-bottom: none; }
+.qt-checkbox {
+  width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent);
+  border-radius: 3px; flex-shrink: 0;
+}
+.qt-row-selected { background: rgba(232,92,47,.06) !important; }
+.qt-row-selected:hover { background: rgba(232,92,47,.1) !important; }
 .qt-num    { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--muted); font-size: 12px; }
 .qt-amount { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; }
 .qt-actions { display: flex; gap: 6px; }
