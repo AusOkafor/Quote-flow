@@ -48,6 +48,7 @@ export default function CreateQuotePage() {
   const [items, setItems]         = useState<LineItemInput[]>([{ description: '', quantity: 1, unit_price: 0 }]);
   const [savedQuote, setSavedQuote] = useState<QuoteWithDetails | null>(null);
   const [isDirty, setIsDirty]     = useState(false);
+  const [draftId, setDraftId]     = useState<string | null>(null);
   const [hasPaymentMethod, setHasPaymentMethod] = useState(true);
   const profileDefaultsApplied    = useRef(false);
   const [form, setForm]       = useState<FormState>({
@@ -76,7 +77,22 @@ export default function CreateQuotePage() {
     const timer = setTimeout(async () => {
       if (!form.client_id || !form.title) return;
       try {
-        await quotesApi.create({ ...form, line_items: items });
+        if (draftId) {
+          // Update the existing draft — never create duplicates
+          await quotesApi.update(draftId, {
+            title: form.title, currency: form.currency,
+            validity_days: form.validity_days, notes: form.notes,
+            deposit: form.deposit, payment_method: form.payment_method,
+            delivery_timeline: form.delivery_timeline, revisions: form.revisions,
+            tax_exempt: form.tax_exempt, tax_rate: form.tax_rate,
+            require_signature: form.require_signature, track_views: form.track_views,
+            send_reminder: form.send_reminder, line_items: items,
+          });
+        } else {
+          // First auto-save — create the draft and store its ID
+          const newQuote = await quotesApi.create({ ...form, line_items: items });
+          setDraftId(newQuote.id);
+        }
         setIsDirty(false);
         toast(messages.createQuote.draftSaved, 'info');
       } catch {
@@ -84,7 +100,7 @@ export default function CreateQuotePage() {
       }
     }, 30000);
     return () => clearTimeout(timer);
-  }, [form, items, isDirty, isEdit]);
+  }, [form, items, isDirty, isEdit, draftId]);
 
   // Apply profile defaults once when profile loads for a new quote
   useEffect(() => {
@@ -202,7 +218,20 @@ export default function CreateQuotePage() {
         setSavedQuote(updated);
         toast(messages.createQuote.quoteUpdated, 'success');
       } else {
-        await quotesApi.create({ ...form, line_items: items });
+        // If auto-save already created a draft, update it — otherwise create fresh
+        if (draftId) {
+          await quotesApi.update(draftId, {
+            title: form.title, currency: form.currency,
+            validity_days: form.validity_days, notes: form.notes,
+            deposit: form.deposit, payment_method: form.payment_method,
+            delivery_timeline: form.delivery_timeline, revisions: form.revisions,
+            tax_exempt: form.tax_exempt, tax_rate: form.tax_rate,
+            require_signature: form.require_signature, track_views: form.track_views,
+            send_reminder: form.send_reminder, line_items: items,
+          });
+        } else {
+          await quotesApi.create({ ...form, line_items: items });
+        }
         toast(messages.createQuote.quoteCreated, 'success');
         navigate('/app/quotes');
       }
